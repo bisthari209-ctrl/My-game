@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { --primary: #1a252f; --gold: #f1c40f; --success: #27ae60; --danger: #e74c3c; --blue: #3498db; --nav-bg: #1a1c24; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 110px; color: #333; }
+        
+        /* Header Section */
+        .profile-header { background: var(--primary); color: white; padding: 40px 15px; text-align: center; border-radius: 0 0 35px 35px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .user-img-container { position: relative; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        .user-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #fff; }
+        .user-name { font-size: 1.4rem; font-weight: bold; margin: 5px 0; }
+        
+        .lucky-draw-btn {
+            background: linear-gradient(135deg, #ff0055, #ffcc00);
+            color: white; padding: 8px 12px; border-radius: 12px; font-size: 0.65rem; font-weight: bold;
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            box-shadow: 0 4px 10px rgba(255, 0, 85, 0.4); cursor: pointer; border: 2px solid white;
+            animation: pulse 1.5s infinite; text-decoration: none;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .uid-container { font-size: 0.85rem; background: rgba(255,255,255,0.15); display: inline-flex; align-items: center; gap: 8px; padding: 7px 18px; border-radius: 30px; cursor: pointer; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
+
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-top: -30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .stat-card i { color: var(--gold); font-size: 1.4rem; margin-bottom: 8px; }
+        .stat-val { display: block; font-weight: 800; font-size: 1.2rem; color: #1a252f; }
+        .stat-card small { color: #7f8c8d; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Buttons */
+        .action-container { display: flex; justify-content: space-between; padding: 25px 20px; gap: 12px; }
+        .btn-main { flex: 1; padding: 15px; border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.95rem; transition: 0.3s; }
+        .btn-deposit { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .btn-withdraw { background: linear-gradient(135deg, #2980b9, #3498db); }
+        .btn-main:active { transform: scale(0.96); }
+
+        /* Menu List */
+        .menu-list { background: white; margin: 0 20px 20px 20px; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .menu-item { padding: 18px; border-bottom: 1px solid #f8f9fa; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; text-decoration: none; cursor: pointer; transition: 0.2s; }
+        .menu-item:active { background: #f1f2f6; }
+        .menu-item span { display: flex; align-items: center; gap: 15px; font-weight: 500; font-size: 0.95rem; }
+        .menu-item i.fa-chevron-right { font-size: 0.8rem; color: #bdc3c7; }
+
+        /* Modal Layout */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-content { background: white; width: 85%; padding: 30px; border-radius: 25px; text-align: center; color: #333; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        
+        .history-container { max-height: 300px; overflow-y: auto; margin: 15px 0; border: 1px solid #eee; border-radius: 15px; background: #fafafa; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { padding: 12px; background: #eee; position: sticky; top: 0; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+
+        .status-pending { color: #f39c12; font-weight: bold; }
+        .status-approved { color: #27ae60; font-weight: bold; }
+        .status-rejected { color: #e74c3c; font-weight: bold; }
+
+        /* Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 2000; }
+        .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e94a1; transition: 0.3s; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 5px; }
+        .nav-item span { font-size: 0.75rem; }
+        .nav-item.active { color: var(--gold); }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 14px; position: fixed; z-index: 4000; left: 50%; bottom: 110px; transform: translateX(-50%); }
+        #toast.show { visibility: visible; animation: fadeInUp 0.4s; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    </style>
+</head>
+<body>
+
+    <div id="toast">सन्देश...</div>
+
+    <div class="profile-header">
+        <div class="user-img-container">
+            <a href="lucky.html" class="lucky-draw-btn"><i class="fas fa-ticket-alt"></i><span>Lucky Draw</span></a>
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer" class="user-img" id="displayPic">
+            <div style="min-width: 60px;"></div> 
+        </div>
+        <div class="user-name" id="displayName">Loading...</div>
+        <div class="uid-container" onclick="copyUID()">
+            <span>UID: <span id="displayID">-------</span></span>
+            <i class="far fa-copy"></i>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><i class="fas fa-users"></i><span class="stat-val" id="referCount">0</span><small>Referrals</small></div>
+        <div class="stat-card"><i class="fas fa-wallet"></i><span class="stat-val" id="referBalance">रू 0.00</span><small>Balance</small></div>
+    </div>
+
+    <div class="action-container">
+        <button class="btn-main btn-deposit" onclick="window.location.href='deposit.html'"><i class="fas fa-plus-circle"></i> DEPOSIT</button>
+        <button class="btn-main btn-withdraw" onclick="openModal('withdrawModal')"><i class="fas fa-university"></i> WITHDRAW</button>
+    </div>
+
+    <div class="menu-list">
+        <div class="menu-item" onclick="openModal('editModal')"><span><i class="fas fa-user-edit" style="color:var(--blue);"></i> Edit Name</span><i class="fas fa-chevron-right"></i></div>
+        <div class="menu-item" onclick="openModal('historyModal')"><span><i class="fas fa-history" style="color:var(--success);"></i> History</span><i class="fas fa-chevron-right"></i></div>
+        <div class="menu-item" id="shareBtn"><span><i class="fas fa-share-nodes" style="color:var(--gold);"></i> Share & Earn</span><i class="fas fa-chevron-right"></i></div>
+        <div class="menu-item" style="color:var(--danger); font-weight:bold;" id="logoutBtn"><span><i class="fas fa-sign-out-alt"></i> Logout</span></div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Profile Name</h3>
+            <input type="text" id="newName" placeholder="Enter New Name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:15px; box-sizing: border-box;">
+            <button class="btn-main btn-deposit" style="width:100%;" id="saveProfileBtn">SAVE CHANGES</button>
+            <button onclick="closeModal('editModal')" style="margin-top:15px; background:none; border:none; color:gray; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content" style="width:90%;">
+            <h3>My Transactions</h3>
+            <div class="history-container">
+                <table>
+                    <thead><tr><th>Type</th><th>Amt</th><th>Status</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+            <button class="btn-main" style="background:#555; width:100%;" onclick="closeModal('historyModal')">CLOSE</button>
+        </div>
+    </div>
+
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <h3>Withdraw Money</h3>
+            <select id="witMethod" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd;">
+                <option value="esewa">eSewa</option>
+                <option value="khalti">Khalti</option>
+            </select>
+            <input type="text" id="witID" placeholder="eSewa/Khalti ID" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd; box-sizing: border-box;">
+            <input type="number" id="witAmount" placeholder="Amount (Min रू 100)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ddd; box-sizing: border-box;">
+            <button class="btn-main" style="background:var(--blue); width:100%;" id="submitWitBtn">REQUEST WITHDRAW</button>
+            <button onclick="closeModal('withdrawModal')" style="margin-top:15px; background:none; border:none; color:gray; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+        <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i><span>Matches</span></a>
+        <a href="notice.html" class="nav-item"><i class="fas fa-bullhorn"></i><span>Notice</span></a>
+        <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Profile</span></a>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, update, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDmrsJq_hxoaSwbl_Y8U8eOZdTVBb0fBIo",
+            authDomain: "ludo-king-b051a.firebaseapp.com",
+            projectId: "ludo-king-b051a",
+            storageBucket: "ludo-king-b051a.firebasestorage.app",
+            messagingSenderId: "311482948017",
+            appId: "1:311482948017:web:4a986ca1416b6e456e0590"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        window.showToast = (msg) => {
+            const t = document.getElementById("toast");
+            t.innerText = msg; t.className = "show";
+            setTimeout(() => { t.className = ""; }, 2500);
+        };
+
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        window.copyUID = () => {
+            const uid = document.getElementById('displayID').innerText;
+            if(uid !== "-------") {
+                navigator.clipboard.writeText(uid).then(() => showToast("UID Copied!"));
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userRef = ref(db, 'users/' + user.uid);
+                
+                // Fetch User Data
+                onValue(userRef, (snap) => {
+                    const data = snap.val();
+                    if (data) {
+                        document.getElementById('displayName').innerText = data.name || "Gamer";
+                        document.getElementById('referCount').innerText = data.referralCount || 0;
+                        document.getElementById('referBalance').innerText = "रू " + (data.balance || 0).toFixed(2);
+                        document.getElementById('displayID').innerText = data.numericID || user.uid.substring(0,6);
+                    }
+                });
+
+                // Fetch History from Admin Node
+                onValue(ref(db, 'admin'), (snapshot) => {
+                    const hBody = document.getElementById('historyBody');
+                    hBody.innerHTML = "";
+                    const adminData = snapshot.val();
+                    let list = [];
+
+                    if(adminData){
+                        if(adminData.deposits){
+                            Object.values(adminData.deposits).forEach(item => {
+                                if(item.uid === user.uid) list.push({...item, type: 'Deposit'});
+                            });
+                        }
+                        if(adminData.withdraws){
+                            Object.values(adminData.withdraws).forEach(item => {
+                                if(item.uid === user.uid) list.push({...item, type: 'Withdraw'});
+                            });
+                        }
+                    }
+
+                    list.sort((a, b) => (b.time || 0) - (a.time || 0));
+
+                    if(list.length > 0){
+                        list.forEach(val => {
+                            const status = (val.status || "pending").toLowerCase();
+                            hBody.innerHTML += `<tr>
+                                <td style="font-weight:500;">${val.type}</td>
+                                <td>रू ${val.amount}</td>
+                                <td class="status-${status}">${status.toUpperCase()}</td>
+                            </tr>`;
+                        });
+                    } else {
+                        hBody.innerHTML = "<tr><td colspan='3' style='padding:20px; color:gray;'>No data found</td></tr>";
+                    }
+                });
+
+                // Withdraw Request
+                document.getElementById('submitWitBtn').onclick = async () => {
+                    const amt = parseFloat(document.getElementById('witAmount').value);
+                    const walletId = document.getElementById('witID').value.trim();
+                    const method = document.getElementById('witMethod').value;
+                    
+                    if (!amt || !walletId) return showToast("कृपया सबै विवरण भर्नुहोस्!");
+                    if (amt < 100) return showToast("न्यूनतम रू १०० हुनुपर्छ!");
+
+                    const btn = document.getElementById('submitWitBtn');
+                    btn.disabled = true; btn.innerText = "प्रक्रिया हुँदैछ...";
+
+                    try {
+                        const result = await runTransaction(userRef, (userData) => {
+                            if (userData && (userData.balance || 0) >= amt) {
+                                userData.balance -= amt;
+                                return userData;
+                            }
+                        });
+
+                        if (!result.committed) throw new Error("पर्याप्त ब्यालेन्स छैन!");
+
+                        const newKey = push(ref(db, 'admin/withdraws')).key;
+                        await update(ref(db, `admin/withdraws/${newKey}`), { 
+                            amount: amt, status: 'pending', method: method, 
+                            wallet: walletId, uid: user.uid, numericID: document.getElementById('displayID').innerText, 
+                            time: Date.now() 
+                        });
+                        
+                        showToast("अनुरोध पठाइयो!"); 
+                        closeModal('withdrawModal');
+                    } catch (err) { 
+                        showToast(err.message); 
+                    } finally { 
+                        btn.disabled = false; btn.innerText = "REQUEST WITHDRAW"; 
+                    }
+                };
+
+                // Edit Profile Name
+                document.getElementById('saveProfileBtn').onclick = () => {
+                    const name = document.getElementById('newName').value.trim();
+                    if (name) {
+                        update(userRef, { name: name }).then(() => { 
+                            showToast("नाम परिवर्तन भयो!"); 
+                            closeModal('editModal'); 
+                            document.getElementById('newName').value = "";
+                        });
+                    }
+                };
+
+                // Share App
+                document.getElementById('shareBtn').onclick = () => {
+                    const myId = document.getElementById('displayID').innerText;
+                    const text = `म यो गेम खेल्दै पैसा कमाउँदै छु! मेरो रेफरल कोड [${myId}] प्रयोग गरेर रू ५ बोनस पाउनुहोस्। डाउनलोड लिंक: (तपाईंको लिंक)`;
+                    if(navigator.share) {
+                        navigator.share({ title: 'Gaming App', text: text, url: window.location.href });
+                    } else {
+                        navigator.clipboard.writeText(text).then(() => showToast("सेयर टेक्स्ट कपि भयो!"));
+                    }
+                };
+
+                document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "index.html");
+            } else { 
+                window.location.href = "index.html"; 
+            }
+        });
+    </script>
+</body>
+</html>

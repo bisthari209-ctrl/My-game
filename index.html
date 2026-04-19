@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register | Mero Ludo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { 
+            --primary: #1a252f; 
+            --gold: #f1c40f; 
+            --success: #27ae60; 
+            --input-bg: rgba(255, 255, 255, 0.05); 
+            --text: #ffffff;
+        }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--primary); overflow: hidden; color: var(--text); }
+        #pageLoader { position: fixed; inset: 0; background: var(--primary); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .auth-box { 
+            width: 85%; max-width: 350px; background: var(--primary); padding: 30px; border-radius: 20px; 
+            text-align: center; display: none; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .logo { font-size: 3rem; color: var(--gold); margin-bottom: 10px; }
+        h2 { margin: 0 0 20px 0; color: var(--text); font-size: 1.4rem; font-weight: 600; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 15px; top: 14px; color: var(--gold); }
+        .input-group input { 
+            width: 100%; padding: 12px 10px 12px 45px; border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; background: var(--input-bg); color: #fff; outline: none; box-sizing: border-box;
+        }
+        .btn-auth { 
+            width: 100%; padding: 14px; border: none; border-radius: 12px; background: var(--gold); 
+            color: var(--primary); font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-auth:disabled { background: #7f8c8d; }
+        .switch-text { margin-top: 20px; font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+        .switch-text b { color: var(--gold); cursor: pointer; }
+        .bonus-tag { background: var(--success); color: white; padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; margin-bottom: 15px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div id="pageLoader">
+        <i class="fas fa-gamepad fa-3x fa-spin" style="color: var(--gold);"></i>
+        <p style="margin-top: 15px; color: #fff;">लोड हुँदैछ...</p>
+    </div>
+
+    <div class="container">
+        <div class="auth-box" id="registerForm">
+            <div class="logo"><i class="fas fa-gamepad"></i></div>
+            <div class="bonus-tag">रू ५ बोनस पाइनेछ! 🎁</div>
+            <h2>खाता बनाउनुहोस्</h2>
+            <div class="input-group"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="पूरा नाम"></div>
+            <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="इमेल"></div>
+            <div class="input-group"><i class="fas fa-key"></i><input type="password" id="regPass" placeholder="पासवर्ड"></div>
+            <div class="input-group"><i class="fas fa-user-friends"></i><input type="text" id="regRefer" placeholder="रेफरल कोड (अनिवार्य)"></div>
+            <button class="btn-auth" id="regBtn">REGISTER</button>
+            <p class="switch-text">खाता छ? <b onclick="toggleForm('login')">Login गर्नुहोस्</b></p>
+        </div>
+
+        <div class="auth-box" id="loginForm">
+            <div class="logo"><i class="fas fa-user-circle"></i></div>
+            <h2> लगइन गर्नुहोस्</h2>
+            <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="इमेल"></div>
+            <div class="input-group"><i class="fas fa-key"></i><input type="password" id="loginPass" placeholder="पासवर्ड"></div>
+            <button class="btn-auth" id="loginBtn">LOGIN</button>
+            <p class="switch-text">खाता छैन? <b onclick="toggleForm('register')">दर्ता गर्नुहोस्</b></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // नयाँ Firebase Config (mero-ludo)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
+            authDomain: "mero-ludo.firebaseapp.com",
+            projectId: "mero-ludo",
+            storageBucket: "mero-ludo.firebasestorage.app",
+            messagingSenderId: "1094014617347",
+            appId: "1:1094014617347:web:348cec65cea83c5a8fcb36"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        setPersistence(auth, browserLocalPersistence);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { window.location.replace("dashboard.html"); } 
+            else { 
+                document.getElementById('pageLoader').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block'; 
+            }
+        });
+
+        window.toggleForm = (type) => {
+            document.getElementById('registerForm').style.display = (type === 'login') ? 'none' : 'block';
+            document.getElementById('loginForm').style.display = (type === 'login') ? 'block' : 'none';
+        };
+
+        const toast = (msg, icon = 'info') => {
+            Swal.fire({ text: msg, icon: icon, confirmButtonColor: '#f1c40f', background: '#1a252f', color: '#fff', timer: 2500 });
+        };
+
+        document.getElementById('regBtn').onclick = async () => {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value;
+            const referCodeInput = document.getElementById('regRefer').value.trim();
+
+            if(!name || !email || !pass || !referCodeInput) return toast("सबै विवरण र रेफरल कोड भर्नुहोस्!", "warning");
+            
+            const btn = document.getElementById('regBtn');
+            btn.disabled = true; btn.innerText = "प्रक्रिया हुँदैछ...";
+
+            try {
+                // १. रेफरल कोड चेक गर्ने
+                const snapshot = await get(ref(db, 'users'));
+                let referrerUID = null;
+                if (snapshot.exists()) {
+                    const allUsers = snapshot.val();
+                    for (let uid in allUsers) {
+                        if (allUsers[uid].numericID === referCodeInput) {
+                            referrerUID = uid;
+                            break;
+                        }
+                    }
+                }
+
+                if (!referrerUID) {
+                    btn.disabled = false; btn.innerText = "REGISTER";
+                    return toast("गलत रेफरल कोड! कृपया सही कोड हाल्नुहोस्।", "error");
+                }
+
+                // २. नयाँ प्रयोगकर्ता बनाउने
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+                const myNumericID = Math.floor(100000 + Math.random() * 900000).toString();
+
+                // ३. नयाँ प्रयोगकर्ताको डाटा सेभ गर्ने (रू ५ बोनस सहित)
+                await set(ref(db, 'users/' + user.uid), {
+                    name, email, balance: 5, numericID: myNumericID, 
+                    referredBy: referCodeInput, uid: user.uid, 
+                    referralCount: 0, joinedAt: Date.now()
+                });
+
+                // ४. रेफर गर्ने मान्छेलाई बोनस दिने
+                await runTransaction(ref(db, 'users/' + referrerUID), (u) => {
+                    if (u) {
+                        u.balance = (u.balance || 0) + 5;
+                        u.referralCount = (u.referralCount || 0) + 1;
+                    }
+                    return u;
+                });
+
+                toast("दर्ता सफल भयो!", "success");
+                setTimeout(() => window.location.replace("dashboard.html"), 1500);
+
+            } catch (error) {
+                toast("दर्ता विफल: " + error.message, "error");
+                btn.disabled = false; btn.innerText = "REGISTER";
+            }
+        };
+
+        document.getElementById('loginBtn').onclick = async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            if(!email || !pass) return toast("विवरण भर्नुहोस्!", "warning");
+
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                toast("लगइन मिलेन! इमेल वा पासवर्ड चेक गर्नुहोस्।", "error");
+            }
+        };
+    </script>
+</body>
+</html>

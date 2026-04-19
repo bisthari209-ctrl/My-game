@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Dashboard - Strategy Spin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { 
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #c0392b; 
+            --gold: #fbbf24; 
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border-gold: rgba(251, 191, 36, 0.3);
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg-dark); color: var(--text-main); padding-bottom: 90px; overflow-x: hidden; }
+
+        /* Toast */
+        #toast { visibility: hidden; min-width: 220px; background-color: #1e293b; color: var(--gold); text-align: center; border-radius: 10px; padding: 14px; position: fixed; z-index: 5000; left: 50%; bottom: 110px; transform: translateX(-50%); border: 2px solid var(--gold); font-weight: bold; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+
+        /* Header */
+        .header { 
+            background: #7f1d1d; color: white; padding: 12px 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .support-btn {
+            background: #ffffff;
+            border: 1.5px solid var(--gold);
+            padding: 8px 12px;
+            border-radius: 10px;
+            color: #7f1d1d;
+            font-weight: 900;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .balance-box { 
+            background: #ffffff; padding: 8px 16px; 
+            border-radius: 12px; border: 1.5px solid var(--gold); 
+            font-weight: 900; font-size: 0.95rem; color: #7f1d1d;
+            display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .balance-box span { color: #16a34a; }
+
+        /* Side Drawer */
+        .side-drawer {
+            position: fixed; top: 0; left: -55%; width: 55%; height: 100%;
+            background: var(--card-bg); z-index: 3000;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.7);
+            padding: 25px 15px;
+            border-right: 2px solid var(--gold);
+            box-sizing: border-box;
+        }
+        .side-drawer.open { left: 0; }
+
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 2999; display: none; backdrop-filter: blur(3px);
+        }
+
+        .drawer-header { border-bottom: 1px solid var(--border-gold); padding-bottom: 15px; margin-bottom: 20px; }
+        .drawer-header h2 { color: var(--gold); font-size: 1rem; margin: 0; text-transform: uppercase; }
+
+        .support-link {
+            display: flex; align-items: center; gap: 10px;
+            background: #0f172a; padding: 12px; border-radius: 12px;
+            margin-bottom: 12px; text-decoration: none; color: white;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .support-link i { font-size: 1.3rem; }
+        .support-link.whatsapp i { color: #25D366; }
+        .support-link.telegram i { color: #0088cc; }
+
+        /* Game Grid */
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .game-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border-gold); text-align: center; display: flex; flex-direction: column; transition: 0.2s; }
+        .game-card img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .game-card h3 { margin: 10px 0; font-size: 0.9rem; font-weight: 800; color: var(--gold); text-transform: uppercase; }
+        .play-btn { background: linear-gradient(to right, #22c55e, #16a34a); color: white; border: none; padding: 10px; border-radius: 12px; margin: 0 12px 15px 12px; cursor: pointer; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
+        .demo-btn { background: linear-gradient(to right, #6366f1, #4f46e5); }
+
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card-bg); width: 85%; max-width: 340px; padding: 25px; border-radius: 24px; text-align: center; border: 1px solid var(--border-gold); }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0f172a; border: 1px solid var(--border-gold); border-radius: 12px; color: white; box-sizing: border-box; }
+
+        /* Wheel Styling */
+        .wheel-outer { position: relative; width: 180px; height: 180px; margin: 15px auto; border: 4px solid var(--gold); border-radius: 50%; }
+        .wheel-container { width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1); }
+        .wheel-img { width: 100%; height: 100%; position: absolute; background: conic-gradient(#ef4444 0deg 60deg, #fbbf24 60deg 120deg, #22c55e 120deg 180deg, #3b82f6 180deg 240deg, #8b5cf6 240deg 300deg, #f97316 300deg 360deg); z-index: 1; }
+        .number-slot { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; color: white; font-weight: 900; font-size: 1rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); z-index: 2; box-sizing: border-box; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(30, 41, 59, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-dim); font-size: 0.7rem; text-decoration: none; font-weight: 600; }
+        .nav-item.active { color: var(--gold); }
+        .nav-item i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
+
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 110px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 110px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+    <div id="toast">सूचना...</div>
+
+    <div class="drawer-overlay" id="overlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h2><i class="fas fa-headset"></i> Support</h2>
+        </div>
+        
+        <a href="https://wa.me/9779800000000" class="support-link whatsapp">
+            <i class="fab fa-whatsapp"></i>
+            <div>
+                <div style="font-weight:bold; font-size: 0.85rem;">WhatsApp</div>
+                <div style="font-size:0.6rem; color:var(--text-dim);">सम्पर्क गर्नुहोस्</div>
+            </div>
+        </a>
+
+        <a href="https://t.me/your_telegram_id" class="support-link telegram">
+            <i class="fab fa-telegram-plane"></i>
+            <div>
+                <div style="font-weight:bold; font-size: 0.85rem;">Telegram</div>
+                <div style="font-size:0.6rem; color:var(--text-dim);">Join Support</div>
+            </div>
+        </a>
+
+        <button onclick="closeDrawer()" class="play-btn" style="background:#475569; width: 100%; margin: 20px 0 0 0;">CLOSE</button>
+    </div>
+
+    <header class="header">
+        <div class="support-btn" onclick="openDrawer()">
+            <i class="fas fa-headset"></i> SUPPORT
+        </div>
+        <div class="balance-box">
+            <i class="fas fa-wallet"></i> रू <span id="userBalance">0.00</span>
+        </div>
+    </header>
+
+    <main class="game-grid">
+        <div class="game-card"><img src="https://i.ibb.co/GvfdCh8y/images.jpg"><h3>Ludo King</h3><button class="play-btn" onclick="openMatchModal('Ludo King')">JOIN MATCH</button></div>
+        <div class="game-card"><img src="https://i.ibb.co/chgx7WP7/download.jpg"><h3>PUBG</h3><button class="play-btn" onclick="openMatchModal('PUBG')">JOIN MATCH</button></div>
+        <div class="game-card"><img src="https://i.ibb.co/HT41RmqB/images-3.jpg"><h3>Free Fire</h3><button class="play-btn" onclick="openMatchModal('Free Fire')">JOIN MATCH</button></div>
+        <div class="game-card"><img src="https://i.ibb.co/YBnVSZV1/download-1.jpg"><h3>Carrom</h3><button class="play-btn" onclick="openMatchModal('Carrom')">JOIN MATCH</button></div>
+        
+        <div class="game-card"><img src="https://i.ibb.co/397kdSqt/1775469473110.png"><h3>Normal Spin</h3><button class="play-btn demo-btn" onclick="openSpinModal('normal')">DEMO SPIN</button></div>
+        <div class="game-card"><img src="https://i.ibb.co/cchmBptQ/1775469646433.png"><h3>Big Spin</h3><button class="play-btn demo-btn" onclick="openSpinModal('big')">DEMO SPIN</button></div>
+    </main>
+
+    <div id="matchModal" class="modal">
+        <div class="modal-content">
+            <h3 id="matchTitle" style="color:var(--gold);">Create Match</h3>
+            <p style="font-size: 0.75rem; color: var(--danger); font-weight: bold; margin-bottom: 10px;">Admin Fee: 15% will be deducted</p>
+            <input type="number" id="entryAmount" placeholder="Entry Amount (Min 10)">
+            <input type="text" id="roomCode" placeholder="Enter Room Code">
+            <button id="createMatchBtn" class="play-btn" style="width: 100%; margin: 10px 0;">CREATE MATCH</button>
+            <button onclick="toggleModal('matchModal')" class="play-btn" style="background:#475569; width: 100%; margin: 0;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="spinModal" class="modal">
+        <div class="modal-content">
+            <h3 id="spinDisplayTitle" style="color:var(--gold);">Lucky Spin</h3>
+            <p style="color:var(--success); font-size:0.7rem; font-weight:bold;">DEMO MODE: No cost, No rewards</p>
+            <div class="wheel-outer">
+                <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 20px solid var(--gold); z-index: 10;"></div>
+                <div class="wheel-container" id="wheelWrapper">
+                    <div class="wheel-img"></div>
+                    <div id="slot1" class="number-slot" style="transform: rotate(30deg);">?</div>
+                    <div id="slot2" class="number-slot" style="transform: rotate(90deg);">?</div>
+                    <div id="slot3" class="number-slot" style="transform: rotate(150deg);">?</div>
+                    <div id="slot4" class="number-slot" style="transform: rotate(210deg);">?</div>
+                    <div id="slot5" class="number-slot" style="transform: rotate(270deg);">?</div>
+                    <div id="slot6" class="number-slot" style="transform: rotate(330deg);">?</div>
+                </div>
+            </div>
+            <div id="spinResultText" style="margin: 10px; font-size: 1.1rem; font-weight: 800; color: var(--success); height: 25px;"></div>
+            <button id="spinStartBtn" class="play-btn demo-btn" style="width: 100%; margin: 5px 0;">START FREE SPIN</button>
+            <button onclick="toggleModal('spinModal')" class="play-btn" style="background:#475569; width: 100%; margin: 5px 0;">CLOSE</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item active"><i class="fas fa-home"></i>Home</a>
+        <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i>Matches</a>
+        <a href="notice.html" class="nav-item"><i class="fas fa-bullhorn"></i>Notice</a>
+        <a href="profile.html" class="nav-item"><i class="fas fa-user"></i>Profile</a>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // यहाँ तपाईंको नयाँ Firebase Configuration राखिएको छ
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
+            authDomain: "mero-ludo.firebaseapp.com",
+            projectId: "mero-ludo",
+            storageBucket: "mero-ludo.firebasestorage.app",
+            messagingSenderId: "1094014617347",
+            appId: "1:1094014617347:web:348cec65cea83c5a8fcb36"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentBalance = 0;
+        let spinning = false;
+        let selectedGame = "";
+
+        // UI Functions
+        window.openDrawer = () => {
+            document.getElementById('sideDrawer').classList.add('open');
+            document.getElementById('overlay').style.display = 'block';
+        };
+        window.closeDrawer = () => {
+            document.getElementById('sideDrawer').classList.remove('open');
+            document.getElementById('overlay').style.display = 'none';
+        };
+        window.showToast = (msg) => { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => { t.className = ""; }, 3000); };
+        window.toggleModal = (id) => { if(!spinning) document.getElementById(id).style.display = (document.getElementById(id).style.display === 'flex') ? 'none' : 'flex'; };
+
+        window.openMatchModal = (game) => { selectedGame = game; document.getElementById('matchTitle').innerText = "Create " + game; toggleModal('matchModal'); };
+
+        window.openSpinModal = (type) => {
+            const prizes = (type === 'normal') ? [5, 10, 3, 0, 2, 7] : [10, 5, 7, 14, 20, 6];
+            document.getElementById('spinDisplayTitle').innerText = (type === 'normal') ? "Demo Normal Spin" : "Demo Big Spin";
+            prizes.forEach((val, i) => document.getElementById(`slot${i+1}`).innerText = val);
+            document.getElementById('spinStartBtn').onclick = () => startDemoSpin(prizes);
+            toggleModal('spinModal');
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) { currentBalance = data.balance || 0; document.getElementById('userBalance').innerText = currentBalance.toFixed(2); }
+                });
+            } else { window.location.href = "index.html"; }
+        });
+
+        async function startDemoSpin(prizes) {
+            if(spinning) return;
+            spinning = true;
+            document.getElementById('spinResultText').innerText = "Spinning...";
+            let stopAt = Math.floor(Math.random() * 6);
+            const wheel = document.getElementById('wheelWrapper');
+            const targetAngle = [30, 90, 150, 210, 270, 330][stopAt];
+            wheel.style.transition = "transform 4s cubic-bezier(0.15, 0, 0.15, 1)";
+            wheel.style.transform = `rotate(${(360 * 5) - targetAngle}deg)`;
+            setTimeout(() => {
+                const win = prizes[stopAt];
+                document.getElementById('spinResultText').innerText = "Demo Win: रू " + win;
+                showToast("यो डेमो मात्र हो।");
+                setTimeout(() => {
+                    spinning = false;
+                    wheel.style.transition = "none";
+                    wheel.style.transform = `rotate(${-targetAngle}deg)`;
+                }, 1500);
+            }, 4000);
+        }
+
+        document.getElementById('createMatchBtn').onclick = () => {
+            const amt = parseFloat(document.getElementById('entryAmount').value);
+            const code = document.getElementById('roomCode').value.trim();
+            if (amt < 10 || !code || currentBalance < amt) return showToast("विवरण वा ब्यालेन्स जाँच गर्नुहोस्!");
+            const finalPrize = (amt * 2 * 0.85).toFixed(2);
+            const newKey = push(ref(db, 'matches')).key;
+            const updates = {};
+            updates['/matches/' + newKey] = { game: selectedGame, entry: amt, prize: finalPrize, roomCode: code, creatorId: auth.currentUser.uid, status: 'open', time: Date.now() };
+            updates['/users/' + auth.currentUser.uid + '/balance'] = (currentBalance - amt);
+            update(ref(db), updates).then(() => { showToast("Match सिर्जना भयो!"); window.location.href = "matches.html"; });
+        };
+    </script>
+</body>
+</html>

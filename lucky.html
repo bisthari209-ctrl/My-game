@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Draw Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #1a1c24; --gold: #f1c40f; --accent: #e74c3c; --success: #27ae60; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 30px; }
+        
+        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
+        .balance-chip { background: rgba(255,255,255,0.1); display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 50px; margin-top: 10px; border: 1px solid var(--gold); }
+
+        .container { padding: 20px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .lucky-box {
+            background: white; border-radius: 20px; overflow: hidden; position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: 1px solid #eee; text-align: center;
+            padding: 20px 10px; transition: 0.3s;
+        }
+        .lucky-box:active { transform: scale(0.95); }
+
+        .box-icon { font-size: 3rem; margin-bottom: 10px; display: block; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); }
+        .box-title { font-weight: bold; font-size: 1rem; color: #444; }
+        .box-price { font-size: 1.2rem; font-weight: 800; color: var(--success); margin: 5px 0; }
+        
+        .btn-join {
+            background: linear-gradient(135deg, #f39c12, #e67e22); color: white;
+            border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold;
+            cursor: pointer; width: 100%; margin-top: 10px;
+        }
+
+        /* Box variants */
+        .box-5 { border-top: 5px solid #3498db; }
+        .box-20 { border-top: 5px solid #9b59b6; }
+        .box-50 { border-top: 5px solid #f1c40f; }
+        .box-100 { border-top: 5px solid #e74c3c; }
+
+        #toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 50px; padding: 14px; position: fixed; z-index: 4000; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        #toast.show { visibility: visible; animation: fadein 0.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+
+        .back-btn { position: absolute; left: 15px; top: 25px; color: white; font-size: 1.2rem; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">सन्देश...</div>
+
+    <div class="header">
+        <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <h2 style="margin:0;">Lucky Box Draw</h2>
+        <div class="balance-chip">
+            <i class="fas fa-wallet" style="color:var(--gold);"></i>
+            <span id="userBalance">रू 0.00</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="lucky-box box-5">
+            <span class="box-icon">🎁</span>
+            <div class="box-title">Bronze Box</div>
+            <div class="box-price">रू 5</div>
+            <button class="btn-join" onclick="joinLuckyDraw(5, 'Bronze')">JOIN NOW</button>
+        </div>
+
+        <div class="lucky-box box-20">
+            <span class="box-icon">💎</span>
+            <div class="box-title">Silver Box</div>
+            <div class="box-price">रू 20</div>
+            <button class="btn-join" onclick="joinLuckyDraw(20, 'Silver')">JOIN NOW</button>
+        </div>
+
+        <div class="lucky-box box-50">
+            <span class="box-icon">👑</span>
+            <div class="box-title">Gold Box</div>
+            <div class="box-price">रू 50</div>
+            <button class="btn-join" onclick="joinLuckyDraw(50, 'Gold')">JOIN NOW</button>
+        </div>
+
+        <div class="lucky-box box-100">
+            <span class="box-icon">🔥</span>
+            <div class="box-title">Diamond Box</div>
+            <div class="box-price">रू 100</div>
+            <button class="btn-join" onclick="joinLuckyDraw(100, 'Diamond')">JOIN NOW</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // नयाँ Firebase Config (mero-ludo)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
+            authDomain: "mero-ludo.firebaseapp.com",
+            projectId: "mero-ludo",
+            storageBucket: "mero-ludo.firebasestorage.app",
+            messagingSenderId: "1094014617347",
+            appId: "1:1094014617347:web:348cec65cea83c5a8fcb36"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentBalance = 0;
+        let userUID = "";
+        let userDetails = {};
+
+        window.showToast = (msg) => {
+            const t = document.getElementById("toast");
+            t.innerText = msg; t.className = "show";
+            setTimeout(() => { t.className = ""; }, 3000);
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userUID = user.uid;
+                const userRef = ref(db, 'users/' + user.uid);
+                onValue(userRef, (snap) => {
+                    const data = snap.val();
+                    if (data) {
+                        userDetails = data;
+                        currentBalance = data.balance || 0;
+                        document.getElementById('userBalance').innerText = "रू " + currentBalance.toFixed(2);
+                    }
+                });
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        window.joinLuckyDraw = async (amount, boxName) => {
+            if (currentBalance < amount) {
+                return showToast("ब्यालेन्स पुगेन! कृपया रिचार्ज गर्नुहोस।");
+            }
+
+            if (!confirm(`के तपाई रू ${amount} तिरेर ${boxName} Box मा सहभागी हुन चाहनुहुन्छ?`)) return;
+
+            const userRef = ref(db, 'users/' + userUID);
+            
+            try {
+                // १. वालेटबाट पैसा काट्ने
+                const result = await runTransaction(userRef, (userData) => {
+                    if (userData && (userData.balance || 0) >= amount) {
+                        userData.balance -= amount;
+                        return userData;
+                    }
+                });
+
+                if (result.committed) {
+                    // २. एडमिनको लागि इन्ट्री रेकर्ड गर्ने
+                    const entryKey = push(ref(db, 'admin/luckyDrawEntries')).key;
+                    const entryData = {
+                        uid: userUID,
+                        name: userDetails.name || "Unknown",
+                        numericID: userDetails.numericID || userUID.substring(0,6),
+                        boxType: boxName,
+                        entryFee: amount,
+                        time: Date.now(),
+                        status: "pending"
+                    };
+
+                    await update(ref(db, `admin/luckyDrawEntries/${entryKey}`), entryData);
+                    
+                    showToast(`${boxName} Box मा सहभागी हुनुभयो! शुभकामना।`);
+                } else {
+                    showToast("Error: पैसा काट्न सकिएन।");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("प्राविधिक समस्या आयो। फेरि प्रयास गर्नुहोला।");
+            }
+        };
+    </script>
+</body>
+</html>
