@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile | Ludo Tournament</title>
+    <title>User Profile | Mero Ludo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root { --primary: #1a252f; --gold: #f1c40f; --success: #27ae60; --danger: #e74c3c; --blue: #3498db; --nav-bg: #1a1c24; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 110px; color: #333; }
         
+        /* Header Section */
         .profile-header { background: var(--primary); color: white; padding: 40px 15px; text-align: center; border-radius: 0 0 35px 35px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .user-img-container { position: relative; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
         .user-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #fff; }
@@ -26,32 +26,51 @@
 
         .uid-container { font-size: 0.85rem; background: rgba(255,255,255,0.15); display: inline-flex; align-items: center; gap: 8px; padding: 7px 18px; border-radius: 30px; cursor: pointer; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
 
+        /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-top: -30px; }
         .stat-card { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
         .stat-card i { color: var(--gold); font-size: 1.4rem; margin-bottom: 8px; }
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; color: #1a252f; }
         
+        /* Matching Buttons Size Fix */
         .action-container { display: flex; justify-content: space-between; padding: 25px 20px; gap: 12px; }
-        .btn-main { flex: 1; padding: 15px; border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.95rem; transition: 0.3s; }
+        .btn-main { 
+            flex: 1; 
+            height: 50px; 
+            border: none; 
+            border-radius: 15px; 
+            color: white; 
+            font-weight: bold; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            font-size: 0.9rem; 
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
         .btn-deposit { background: linear-gradient(135deg, #27ae60, #2ecc71); }
         .btn-withdraw { background: linear-gradient(135deg, #2980b9, #3498db); }
 
+        /* Menu Section */
         .menu-list { background: white; margin: 0 20px 20px 20px; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .menu-item { padding: 18px; border-bottom: 1px solid #f8f9fa; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; text-decoration: none; cursor: pointer; }
         .menu-item span { display: flex; align-items: center; gap: 15px; font-weight: 500; }
 
-        /* Modals Style */
+        /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 85%; padding: 25px; border-radius: 25px; text-align: center; max-height: 80vh; overflow-y: auto; }
 
-        /* History List Style */
-        .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .hist-type { font-weight: bold; display: block; text-align: left; }
-        .hist-date { font-size: 0.75rem; color: gray; }
-        .status-pending { color: #f39c12; }
-        .status-success { color: #27ae60; }
-        .status-rejected { color: #e74c3c; }
+        /* History Styling */
+        .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .hist-type { font-weight: bold; font-size: 0.95rem; display: block; text-align: left; }
+        .hist-date { font-size: 0.75rem; color: #888; }
+        .status-pending { color: #f39c12; font-weight: bold; }
+        .status-approved, .status-success { color: #27ae60; font-weight: bold; }
+        .status-rejected { color: #e74c3c; font-weight: bold; }
 
+        /* Bottom Nav */
         .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; z-index: 2000; }
         .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e94a1; font-size: 12px; }
         .nav-item.active { color: var(--gold); }
@@ -71,7 +90,7 @@
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer" class="user-img" id="displayPic">
             <div style="min-width: 60px;"></div> 
         </div>
-        <div class="user-name" id="displayName">लोडिङ हुँदैछ...</div>
+        <div class="user-name" id="displayName">लोडिङ...</div>
         <div class="uid-container" onclick="copyUID()">
             <span>Refer Code: <span id="displayID">-----</span></span>
             <i class="far fa-copy"></i>
@@ -92,8 +111,12 @@
     </div>
 
     <div class="action-container">
-        <button class="btn-main btn-deposit" onclick="window.location.href='deposit.html'"><i class="fas fa-plus-circle"></i> DEPOSIT</button>
-        <button class="btn-main btn-withdraw" onclick="openModal('withdrawModal')"><i class="fas fa-university"></i> WITHDRAW</button>
+        <button class="btn-main btn-deposit" onclick="window.location.href='deposit.html'">
+            <i class="fas fa-plus-circle"></i> DEPOSIT
+        </button>
+        <button class="btn-main btn-withdraw" onclick="openModal('withdrawModal')">
+            <i class="fas fa-university"></i> WITHDRAW
+        </button>
     </div>
 
     <div class="menu-list">
@@ -123,11 +146,11 @@
     </div></div>
 
     <div id="historyModal" class="modal"><div class="modal-content">
-        <h3 style="margin-top:0;">Transaction History</h3>
+        <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">History</h3>
         <div id="historyList" style="text-align:left;">
             <p style="text-align:center;">लोडिङ हुँदैछ...</p>
         </div>
-        <button onclick="closeModal('historyModal')" style="margin-top:20px; width:100%; padding:12px; background:#eee; border:none; border-radius:10px;">CLOSE</button>
+        <button onclick="closeModal('historyModal')" style="margin-top:20px; width:100%; padding:12px; background:#f0f2f5; border:none; border-radius:10px; font-weight:bold;">CLOSE</button>
     </div></div>
 
     <nav class="bottom-nav">
@@ -180,7 +203,7 @@
                     }
                 });
 
-                // --- HISTORY BUTTON LOGIC ---
+                // --- History Fix (Using admin/ Path) ---
                 document.getElementById('historyBtn').onclick = async () => {
                     openModal('historyModal');
                     const historyList = document.getElementById('historyList');
@@ -188,60 +211,64 @@
                     
                     try {
                         let allHistory = [];
-                        // विथड्र हिस्ट्री तान्ने
-                        const witSnap = await get(query(ref(db, 'admin/withdraws'), orderByChild('uid'), equalTo(user.uid)));
+                        
+                        // Withdraws र Deposits तान्ने (तपाईँको डेटाबेस admin/ भित्र भएकाले)
+                        const [witSnap, depSnap] = await Promise.all([
+                            get(query(ref(db, 'admin/withdraws'), orderByChild('uid'), equalTo(user.uid))),
+                            get(query(ref(db, 'admin/deposits'), orderByChild('uid'), equalTo(user.uid)))
+                        ]);
+
                         if(witSnap.exists()) {
                             witSnap.forEach(item => { allHistory.push({...item.val(), type: 'Withdraw'}); });
                         }
-                        // डिपोजिट हिस्ट्री तान्ने
-                        const depSnap = await get(query(ref(db, 'admin/deposits'), orderByChild('uid'), equalTo(user.uid)));
                         if(depSnap.exists()) {
                             depSnap.forEach(item => { allHistory.push({...item.val(), type: 'Deposit'}); });
                         }
 
                         if(allHistory.length === 0) {
-                            historyList.innerHTML = '<p style="text-align:center; color:gray;">कुनै हिस्ट्री भेटिएन।</p>';
+                            historyList.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">कुनै हिस्ट्री भेटिएन।</p>';
                         } else {
-                            // समय अनुसार क्रम मिलाउने (नयाँ माथि)
                             allHistory.sort((a, b) => b.time - a.time);
                             let html = "";
                             allHistory.forEach(h => {
                                 const date = new Date(h.time).toLocaleDateString();
-                                const statusClass = `status-${h.status || 'pending'}`;
+                                const status = (h.status || 'pending').toLowerCase();
+                                const typeColor = h.type === 'Deposit' ? '#27ae60' : '#3498db';
                                 html += `
                                     <div class="hist-item">
                                         <div>
-                                            <span class="hist-type">${h.type}</span>
+                                            <span class="hist-type" style="color:${typeColor}">${h.type}</span>
                                             <span class="hist-date">${date}</span>
                                         </div>
                                         <div style="text-align:right;">
                                             <div style="font-weight:bold;">रू ${h.amount}</div>
-                                            <div class="${statusClass}" style="font-size:0.8rem;">${(h.status || 'pending').toUpperCase()}</div>
+                                            <div class="status-${status}">${status.toUpperCase()}</div>
                                         </div>
                                     </div>`;
                             });
                             historyList.innerHTML = html;
                         }
                     } catch (err) {
-                        historyList.innerHTML = '<p style="text-align:center; color:red;">डेटा लोड गर्न सकिएन।</p>';
+                        console.error(err);
+                        historyList.innerHTML = '<p style="text-align:center; color:red; font-size:0.8rem;">लोडिङ एरर! Firebase Rules मा uid इन्डेक्स चेक गर्नुहोस्।</p>';
                     }
                 };
 
-                // --- REFER & SHARE LOGIC ---
+                // Refer & Share
                 document.getElementById('shareBtn').onclick = () => {
-                    const msg = `नमस्ते! म "Mero Ludo" खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode} प्रयोग गरेर तपाईँ पनि बोनस पाउनुहोस्। एप यहाँबाट डाउनलोड गर्नुहोस्: https://mero-ludo.web.app`;
+                    const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode} प्रयोग गर्नुहोस् र बोनस पाउनुहोस्।\nलिंक: https://mero-ludo.web.app`;
                     if (navigator.share) {
-                        navigator.share({ title: 'Mero Ludo Share', text: msg, url: 'https://mero-ludo.web.app' });
+                        navigator.share({ title: 'Mero Ludo', text: msg, url: 'https://mero-ludo.web.app' });
                     } else {
                         navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!"));
                     }
                 };
 
-                // Withdraw Request
+                // Withdraw Request (Saves inside admin/withdraws)
                 document.getElementById('submitWitBtn').onclick = async () => {
                     const amt = parseFloat(document.getElementById('witAmount').value);
                     const walletId = document.getElementById('witID').value.trim();
-                    if (!amt || amt < 100 || !walletId) return showToast("सहि विवरण हाल्नुहोस् (Min 100)");
+                    if (!amt || amt < 100 || !walletId) return showToast("विवरण मिलेन (Min 100)");
 
                     try {
                         const res = await runTransaction(userRef, (u) => {
@@ -257,10 +284,8 @@
                     } catch(e) { showToast(e.message); }
                 };
 
-                // Logout
-                document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "index.html");
+                document.getElementById('logoutBtn').onclick = () => signOut(auth);
                 
-                // Update Name
                 document.getElementById('saveProfileBtn').onclick = () => {
                     const name = document.getElementById('newName').value.trim();
                     if(name) update(userRef, { name: name }).then(() => { showToast("नाम अपडेट भयो!"); closeModal('editModal'); });
