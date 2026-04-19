@@ -6,7 +6,16 @@
     <title>User Profile | Mero Ludo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #1a252f; --gold: #f1c40f; --success: #27ae60; --danger: #e74c3c; --blue: #3498db; --nav-bg: #1a1c24; }
+        :root { 
+            --primary: #1a252f; 
+            --gold: #fbbf24; 
+            --success: #27ae60; 
+            --danger: #e74c3c; 
+            --blue: #3498db; 
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+        }
+        
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 110px; color: #333; }
         
         /* Header Section */
@@ -32,22 +41,11 @@
         .stat-card i { color: var(--gold); font-size: 1.4rem; margin-bottom: 8px; }
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; color: #1a252f; }
         
-        /* Matching Buttons Size Fix */
+        /* Action Buttons */
         .action-container { display: flex; justify-content: space-between; padding: 25px 20px; gap: 12px; }
         .btn-main { 
-            flex: 1; 
-            height: 50px; 
-            border: none; 
-            border-radius: 15px; 
-            color: white; 
-            font-weight: bold; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
-            font-size: 0.9rem; 
-            transition: 0.3s;
+            flex: 1; height: 50px; border: none; border-radius: 15px; color: white; font-weight: bold; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem; transition: 0.3s;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .btn-deposit { background: linear-gradient(135deg, #27ae60, #2ecc71); }
@@ -70,9 +68,19 @@
         .status-approved, .status-success { color: #27ae60; font-weight: bold; }
         .status-rejected { color: #e74c3c; font-weight: bold; }
 
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; z-index: 2000; }
-        .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e94a1; font-size: 12px; }
+        /* --- Updated Bottom Nav (Dashboard Style) --- */
+        .bottom-nav { 
+            position: fixed; bottom: 15px; left: 15px; right: 15px; 
+            background: rgba(30, 41, 59, 0.95); display: flex; 
+            justify-content: space-around; padding: 12px 0; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); 
+            z-index: 2000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .nav-item { 
+            text-align: center; color: #94a3b8; font-size: 0.7rem; 
+            text-decoration: none; font-weight: 600; flex: 1; transition: 0.3s;
+        }
+        .nav-item i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--gold); }
         
         #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 4000; left: 50%; bottom: 110px; transform: translateX(-50%); }
@@ -86,7 +94,7 @@
 
     <div class="profile-header">
         <div class="user-img-container">
-            <a href="lucky.html" class="lucky-draw-btn"><i class="fas fa-ticket-alt"></i><span>Lucky Draw</span></a>
+            <a href="lucky.html" class="lucky-draw-btn"><i class="fas fa-ticket-alt"></i>Lucky Draw</a>
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamer" class="user-img" id="displayPic">
             <div style="min-width: 60px;"></div> 
         </div>
@@ -154,10 +162,10 @@
     </div></div>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
-        <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i><span>Matches</span></a>
-        <a href="notice.html" class="nav-item"><i class="fas fa-bullhorn"></i><span>Notice</span></a>
-        <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Profile</span></a>
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>Home</a>
+        <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i>Matches</a>
+        <a href="notice.html" class="nav-item"><i class="fas fa-bullhorn"></i>Notice</a>
+        <a href="profile.html" class="nav-item active"><i class="fas fa-user"></i>Profile</a>
     </nav>
 
     <script type="module">
@@ -203,27 +211,18 @@
                     }
                 });
 
-                // --- History Fix (Using admin/ Path) ---
                 document.getElementById('historyBtn').onclick = async () => {
                     openModal('historyModal');
                     const historyList = document.getElementById('historyList');
                     historyList.innerHTML = '<p style="text-align:center;">लोडिङ हुँदैछ...</p>';
-                    
                     try {
                         let allHistory = [];
-                        
-                        // Withdraws र Deposits तान्ने (तपाईँको डेटाबेस admin/ भित्र भएकाले)
                         const [witSnap, depSnap] = await Promise.all([
                             get(query(ref(db, 'admin/withdraws'), orderByChild('uid'), equalTo(user.uid))),
                             get(query(ref(db, 'admin/deposits'), orderByChild('uid'), equalTo(user.uid)))
                         ]);
-
-                        if(witSnap.exists()) {
-                            witSnap.forEach(item => { allHistory.push({...item.val(), type: 'Withdraw'}); });
-                        }
-                        if(depSnap.exists()) {
-                            depSnap.forEach(item => { allHistory.push({...item.val(), type: 'Deposit'}); });
-                        }
+                        if(witSnap.exists()) { witSnap.forEach(item => { allHistory.push({...item.val(), type: 'Withdraw'}); }); }
+                        if(depSnap.exists()) { depSnap.forEach(item => { allHistory.push({...item.val(), type: 'Deposit'}); }); }
 
                         if(allHistory.length === 0) {
                             historyList.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">कुनै हिस्ट्री भेटिएन।</p>';
@@ -234,73 +233,45 @@
                                 const date = new Date(h.time).toLocaleDateString();
                                 const status = (h.status || 'pending').toLowerCase();
                                 const typeColor = h.type === 'Deposit' ? '#27ae60' : '#3498db';
-                                html += `
-                                    <div class="hist-item">
-                                        <div>
-                                            <span class="hist-type" style="color:${typeColor}">${h.type}</span>
-                                            <span class="hist-date">${date}</span>
-                                        </div>
-                                        <div style="text-align:right;">
-                                            <div style="font-weight:bold;">रू ${h.amount}</div>
-                                            <div class="status-${status}">${status.toUpperCase()}</div>
-                                        </div>
-                                    </div>`;
+                                html += `<div class="hist-item">
+                                    <div><span class="hist-type" style="color:${typeColor}">${h.type}</span><span class="hist-date">${date}</span></div>
+                                    <div style="text-align:right;"><div style="font-weight:bold;">रू ${h.amount}</div><div class="status-${status}">${status.toUpperCase()}</div></div>
+                                </div>`;
                             });
                             historyList.innerHTML = html;
                         }
-                    } catch (err) {
-                        console.error(err);
-                        historyList.innerHTML = '<p style="text-align:center; color:red; font-size:0.8rem;">लोडिङ एरर! Firebase Rules मा uid इन्डेक्स चेक गर्नुहोस्।</p>';
-                    }
+                    } catch (err) { historyList.innerHTML = '<p style="text-align:center; color:red;">लोडिङ एरर!</p>'; }
                 };
 
-                // Refer & Share
                 document.getElementById('shareBtn').onclick = () => {
                     const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode} प्रयोग गर्नुहोस् र बोनस पाउनुहोस्।\nलिंक: https://mero-ludo.web.app`;
-                    if (navigator.share) {
-                        navigator.share({ title: 'Mero Ludo', text: msg, url: 'https://mero-ludo.web.app' });
-                    } else {
-                        navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!"));
-                    }
+                    if (navigator.share) { navigator.share({ title: 'Mero Ludo', text: msg, url: 'https://mero-ludo.web.app' }); }
+                    else { navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!")); }
                 };
 
-                // Withdraw Request (Saves inside admin/withdraws)
                 document.getElementById('submitWitBtn').onclick = async () => {
                     const amt = parseFloat(document.getElementById('witAmount').value);
                     const walletId = document.getElementById('witID').value.trim();
                     if (!amt || amt < 100 || !walletId) return showToast("विवरण मिलेन (Min 100)");
-
                     try {
-                        const res = await runTransaction(userRef, (u) => {
-                            if (u && (u.balance || 0) >= amt) { u.balance -= amt; return u; }
-                        });
+                        const res = await runTransaction(userRef, (u) => { if (u && (u.balance || 0) >= amt) { u.balance -= amt; return u; } });
                         if (!res.committed) throw new Error("ब्यालेन्स पुगेन!");
-                        
-                        await push(ref(db, 'admin/withdraws'), {
-                            uid: user.uid, amount: amt, method: document.getElementById('witMethod').value,
-                            wallet: walletId, status: 'pending', time: Date.now()
-                        });
+                        await push(ref(db, 'admin/withdraws'), { uid: user.uid, amount: amt, method: document.getElementById('witMethod').value, wallet: walletId, status: 'pending', time: Date.now() });
                         showToast("अनुरोध सफल भयो!"); closeModal('withdrawModal');
                     } catch(e) { showToast(e.message); }
                 };
 
                 document.getElementById('logoutBtn').onclick = () => signOut(auth);
-                
                 document.getElementById('saveProfileBtn').onclick = () => {
                     const name = document.getElementById('newName').value.trim();
                     if(name) update(userRef, { name: name }).then(() => { showToast("नाम अपडेट भयो!"); closeModal('editModal'); });
                 };
-
-            } else {
-                window.location.href = "index.html"; 
-            }
+            } else { window.location.href = "index.html"; }
         });
 
         window.copyUID = () => {
             const id = document.getElementById('displayID').innerText;
-            if(id !== "-----") {
-                navigator.clipboard.writeText(id).then(() => showToast("Refer Code Copied!"));
-            }
+            if(id !== "-----") { navigator.clipboard.writeText(id).then(() => showToast("Refer Code Copied!")); }
         };
     </script>
 </body>
