@@ -42,7 +42,14 @@
 
         /* Modals Style */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .modal-content { background: white; width: 85%; padding: 30px; border-radius: 25px; text-align: center; }
+        .modal-content { background: white; width: 85%; padding: 25px; border-radius: 25px; text-align: center; max-height: 80vh; overflow-y: auto; }
+
+        /* History Table Style */
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        .history-table th { background: #f8f9fa; padding: 10px; text-align: left; }
+        .history-table td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-success { color: green; font-weight: bold; }
 
         .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; height: 75px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; z-index: 2000; }
         .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e94a1; font-size: 12px; }
@@ -90,7 +97,7 @@
 
     <div class="menu-list">
         <div class="menu-item" onclick="openModal('editModal')"><span><i class="fas fa-user-edit" style="color:var(--blue);"></i> Edit Name</span><i class="fas fa-chevron-right"></i></div>
-        <div class="menu-item" onclick="openModal('historyModal')"><span><i class="fas fa-history" style="color:var(--success);"></i> History</span><i class="fas fa-chevron-right"></i></div>
+        <div class="menu-item" id="historyBtn"><span><i class="fas fa-history" style="color:var(--success);"></i> History</span><i class="fas fa-chevron-right"></i></div>
         <div class="menu-item" id="shareBtn"><span><i class="fas fa-share-nodes" style="color:var(--gold);"></i> Share & Earn</span><i class="fas fa-chevron-right"></i></div>
         <div class="menu-item" style="color:var(--danger); font-weight:bold;" id="logoutBtn"><span><i class="fas fa-sign-out-alt"></i> Logout</span></div>
     </div>
@@ -114,6 +121,17 @@
         <button onclick="closeModal('withdrawModal')" style="margin-top:10px; background:none; border:none; color:gray;">Cancel</button>
     </div></div>
 
+    <div id="historyModal" class="modal"><div class="modal-content">
+        <h3>Transaction History</h3>
+        <div style="overflow-x:auto;">
+            <table class="history-table">
+                <thead><tr><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody id="historyList"><tr><td colspan="3" style="text-align:center;">No data found</td></tr></tbody>
+            </table>
+        </div>
+        <button onclick="closeModal('historyModal')" style="margin-top:20px; background:var(--primary); color:white; padding:10px 20px; border-radius:10px; border:none;">Close</button>
+    </div></div>
+
     <nav class="bottom-nav">
         <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
         <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i><span>Matches</span></a>
@@ -124,9 +142,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, update, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, push, runTransaction, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Your Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
@@ -152,15 +169,54 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const userRef = ref(db, 'users/' + user.uid);
+                let myReferCode = "";
+
                 onValue(userRef, (snap) => {
                     const data = snap.val();
                     if (data) {
+                        myReferCode = data.numericID || "-----";
                         document.getElementById('displayName').innerText = data.name || "Gamer";
                         document.getElementById('referCount').innerText = data.referralCount || 0;
                         document.getElementById('referBalance').innerText = "रू " + (data.balance || 0).toFixed(2);
-                        document.getElementById('displayID').innerText = data.numericID || "-----";
+                        document.getElementById('displayID').innerText = myReferCode;
                     }
                 });
+
+                // --- 1. History Functionality ---
+                document.getElementById('historyBtn').onclick = async () => {
+                    openModal('historyModal');
+                    const historyList = document.getElementById('historyList');
+                    historyList.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Loading...</td></tr>";
+                    
+                    const witQuery = query(ref(db, 'admin/withdraws'), orderByChild('uid'), equalTo(user.uid));
+                    const snapshot = await get(witQuery);
+                    
+                    let html = "";
+                    if(snapshot.exists()) {
+                        snapshot.forEach((child) => {
+                            const val = child.val();
+                            html += `<tr>
+                                <td>Withdraw</td>
+                                <td>रू ${val.amount}</td>
+                                <td class="status-${val.status}">${val.status.toUpperCase()}</td>
+                            </tr>`;
+                        });
+                        historyList.innerHTML = html;
+                    } else {
+                        historyList.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No history found</td></tr>";
+                    }
+                };
+
+                // --- 2. Share & Earn (Refer) Functionality ---
+                document.getElementById('shareBtn').onclick = () => {
+                    const shareText = `नमस्ते! म यो गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${myReferCode} प्रयोग गरेर तपाईँ पनि सुरु गर्नुहोस। एप यहाँबाट डाउनलोड गर्नुहोस: https://mero-ludo.web.app`;
+                    
+                    if (navigator.share) {
+                        navigator.share({ title: 'Mero Ludo', text: shareText, url: 'https://mero-ludo.web.app' });
+                    } else {
+                        navigator.clipboard.writeText(shareText).then(() => showToast("Share text copied to clipboard!"));
+                    }
+                };
 
                 // Withdraw Request
                 document.getElementById('submitWitBtn').onclick = async () => {
@@ -192,7 +248,6 @@
                 };
 
             } else {
-                // यदि लगइन छैन भने सिधै यहाँ पठाउने (फाइलको नाम चेक गर्नुहोला)
                 window.location.href = "index.html"; 
             }
         });
