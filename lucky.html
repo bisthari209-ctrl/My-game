@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lucky Draw Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root { --primary: #1a1c24; --gold: #f1c40f; --accent: #e74c3c; --success: #27ae60; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 30px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 30px; }
         
         .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
         .balance-chip { background: rgba(255,255,255,0.1); display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 50px; margin-top: 10px; border: 1px solid var(--gold); }
@@ -27,26 +28,19 @@
         
         .btn-join {
             background: linear-gradient(135deg, #f39c12, #e67e22); color: white;
-            border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold;
+            border: none; padding: 12px; border-radius: 12px; font-weight: bold;
             cursor: pointer; width: 100%; margin-top: 10px;
         }
 
-        /* Box variants */
         .box-5 { border-top: 5px solid #3498db; }
         .box-20 { border-top: 5px solid #9b59b6; }
         .box-50 { border-top: 5px solid #f1c40f; }
         .box-100 { border-top: 5px solid #e74c3c; }
 
-        #toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 50px; padding: 14px; position: fixed; z-index: 4000; left: 50%; bottom: 30px; transform: translateX(-50%); }
-        #toast.show { visibility: visible; animation: fadein 0.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-
         .back-btn { position: absolute; left: 15px; top: 25px; color: white; font-size: 1.2rem; text-decoration: none; }
     </style>
 </head>
 <body>
-
-    <div id="toast">सन्देश...</div>
 
     <div class="header">
         <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
@@ -92,7 +86,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // नयाँ Firebase Config (mero-ludo)
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
@@ -110,17 +103,10 @@
         let userUID = "";
         let userDetails = {};
 
-        window.showToast = (msg) => {
-            const t = document.getElementById("toast");
-            t.innerText = msg; t.className = "show";
-            setTimeout(() => { t.className = ""; }, 3000);
-        };
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userUID = user.uid;
-                const userRef = ref(db, 'users/' + user.uid);
-                onValue(userRef, (snap) => {
+                onValue(ref(db, 'users/' + user.uid), (snap) => {
                     const data = snap.val();
                     if (data) {
                         userDetails = data;
@@ -128,51 +114,56 @@
                         document.getElementById('userBalance').innerText = "रू " + currentBalance.toFixed(2);
                     }
                 });
-            } else {
-                window.location.href = "index.html";
-            }
+            } else { window.location.href = "index.html"; }
         });
 
         window.joinLuckyDraw = async (amount, boxName) => {
             if (currentBalance < amount) {
-                return showToast("ब्यालेन्स पुगेन! कृपया रिचार्ज गर्नुहोस।");
+                return Swal.fire({ icon: 'error', title: 'माफ गर्नुहोस्', text: 'तपाईँको ब्यालेन्स पुगेन!' });
             }
 
-            if (!confirm(`के तपाई रू ${amount} तिरेर ${boxName} Box मा सहभागी हुन चाहनुहुन्छ?`)) return;
+            // Confirm मेसेज - "Localhost says" अब आउँदैन
+            const confirmation = await Swal.fire({
+                title: 'के तपाईँ तयार हुनुहुन्छ?',
+                text: `रू ${amount} तिरेर ${boxName} Box मा सहभागी हुन चाहनुहुन्छ?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#f39c12',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'हो, सहभागी हुन्छु!',
+                cancelButtonText: 'रद्द गर्नुहोस्'
+            });
 
-            const userRef = ref(db, 'users/' + userUID);
-            
-            try {
-                // १. वालेटबाट पैसा काट्ने
-                const result = await runTransaction(userRef, (userData) => {
-                    if (userData && (userData.balance || 0) >= amount) {
-                        userData.balance -= amount;
-                        return userData;
+            if (confirmation.isConfirmed) {
+                // Loading देखाउने
+                Swal.fire({ title: 'प्रक्रिया सुरु हुँदैछ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                const userRef = ref(db, 'users/' + userUID);
+                try {
+                    const result = await runTransaction(userRef, (userData) => {
+                        if (userData && (userData.balance || 0) >= amount) {
+                            userData.balance -= amount;
+                            return userData;
+                        }
+                    });
+
+                    if (result.committed) {
+                        const entryKey = push(ref(db, 'admin/luckyDrawEntries')).key;
+                        await update(ref(db, `admin/luckyDrawEntries/${entryKey}`), {
+                            uid: userUID,
+                            name: userDetails.name || "Unknown",
+                            numericID: userDetails.numericID || userUID.substring(0,6),
+                            boxType: boxName,
+                            entryFee: amount,
+                            time: Date.now(),
+                            status: "pending"
+                        });
+                        
+                        Swal.fire('सफल!', `${boxName} Box मा तपाईँको इन्ट्री भयो।`, 'success');
                     }
-                });
-
-                if (result.committed) {
-                    // २. एडमिनको लागि इन्ट्री रेकर्ड गर्ने
-                    const entryKey = push(ref(db, 'admin/luckyDrawEntries')).key;
-                    const entryData = {
-                        uid: userUID,
-                        name: userDetails.name || "Unknown",
-                        numericID: userDetails.numericID || userUID.substring(0,6),
-                        boxType: boxName,
-                        entryFee: amount,
-                        time: Date.now(),
-                        status: "pending"
-                    };
-
-                    await update(ref(db, `admin/luckyDrawEntries/${entryKey}`), entryData);
-                    
-                    showToast(`${boxName} Box मा सहभागी हुनुभयो! शुभकामना।`);
-                } else {
-                    showToast("Error: पैसा काट्न सकिएन।");
+                } catch (error) {
+                    Swal.fire('Error', 'केही प्राविधिक समस्या आयो।', 'error');
                 }
-            } catch (error) {
-                console.error(error);
-                showToast("प्राविधिक समस्या आयो। फेरि प्रयास गर्नुहोला।");
             }
         };
     </script>
