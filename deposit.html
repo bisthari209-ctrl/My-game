@@ -45,12 +45,14 @@
         }
         .qr-img { width: 180px; height: 180px; border-radius: 8px; display: block; }
 
+        /* Copy & Download Buttons */
         .action-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
         .btn-action { 
             padding: 8px 15px; border-radius: 8px; border: none; font-size: 0.85rem; 
             cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;
             background: #eee; color: #333; transition: 0.2s;
         }
+        .btn-action:active { transform: scale(0.95); }
         
         .num-display { font-weight: bold; font-size: 1rem; color: var(--primary); margin-bottom: 5px; display: block; }
 
@@ -135,6 +137,51 @@
             <button class="btn-done khalti-bg" onclick="handleDeposit('khalti')">DONE / SUBMIT</button>
         </div>
 
+        <div class="wallet-card">
+            <div class="wallet-header imepay-c">
+                <img src="https://i.ibb.co/Qv8mWDY0/imepay-icon.png"> IME Pay
+            </div>
+            <div class="qr-box">
+                <img src="https://i.ibb.co/rG7kNxk2/imepay-qr.png" class="qr-img" id="qr_imepay">
+            </div>
+            <span class="num-display">9748253225</span>
+            <div class="action-row">
+                <button class="btn-action" onclick="copyNum('9748253225')"><i class="fas fa-copy"></i> Copy</button>
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/rG7kNxk2/imepay-qr.png', 'IMEPay_QR')"><i class="fas fa-download"></i> Download</button>
+            </div>
+            <div class="input-group">
+                <label>रकम (Min. रू ५०)</label>
+                <input type="number" class="input-box" id="amt_imepay" placeholder="Amount">
+            </div>
+            <div class="input-group">
+                <label>Screenshot</label>
+                <input type="file" class="input-box" id="file_imepay" accept="image/*">
+            </div>
+            <button class="btn-done imepay-bg" onclick="handleDeposit('imepay')">DONE / SUBMIT</button>
+        </div>
+
+        <div class="wallet-card">
+            <div class="wallet-header banking-c">
+                <img src="https://i.ibb.co/ycF2R2J6/banking-icon.png"> Banking (Fonepay)
+            </div>
+            <div class="qr-box">
+                <img src="https://i.ibb.co/gFD30p5G/banking-qr.png" class="qr-img" id="qr_banking">
+            </div>
+            <span class="num-display">RK LUDO CENTER</span>
+            <div class="action-row">
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/gFD30p5G/banking-qr.png', 'Banking_QR')"><i class="fas fa-download"></i> Download QR</button>
+            </div>
+            <div class="input-group">
+                <label>रकम (Min. रू ५०)</label>
+                <input type="number" class="input-box" id="amt_banking" placeholder="Amount">
+            </div>
+            <div class="input-group">
+                <label>Screenshot</label>
+                <input type="file" class="input-box" id="file_banking" accept="image/*">
+            </div>
+            <button class="btn-done banking-bg" onclick="handleDeposit('banking')">DONE / SUBMIT</button>
+        </div>
+
     </div>
 
     <script type="module">
@@ -142,7 +189,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, push, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // नयाँ Firebase Config (mero-ludo)
+        // नयाँ Firebase Configuration (mero-ludo)
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
@@ -163,10 +210,12 @@
         };
 
         window.downloadQR = (url, name) => {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = name + '.png';
-            a.click();
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = name + ".png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
         window.handleDeposit = async (method) => {
@@ -178,13 +227,14 @@
             if (!fileInput.files[0]) return showToast("Screenshot हाल्नुहोस्!");
 
             const btn = event.target;
-            btn.innerText = "अपलोड हुँदैछ..."; btn.disabled = true;
+            btn.innerText = "पख्नुहोस्..."; btn.disabled = true;
 
             try {
                 const userSnap = await get(ref(db, 'users/' + auth.currentUser.uid));
                 const userData = userSnap.val();
+                const numID = userData?.numericID || "N/A";
+                const userName = userData?.name || "Unknown";
 
-                // ImgBB मा अपलोड गर्ने
                 const formData = new FormData();
                 formData.append("image", fileInput.files[0]);
                 
@@ -195,8 +245,8 @@
                     const newKey = push(ref(db, 'admin/deposits')).key;
                     const depData = {
                         uid: auth.currentUser.uid,
-                        name: userData.name || "Unknown",
-                        numericID: userData.numericID || "N/A",
+                        name: userName,
+                        numericID: numID,
                         amount: parseFloat(amt),
                         method: method.toUpperCase(),
                         status: 'pending',
@@ -210,7 +260,7 @@
                     updates[`/users/${auth.currentUser.uid}/history/${newKey}`] = depData;
                     
                     await update(ref(db), updates);
-                    showToast("डिपोजिट अनुरोध पठाइयो!");
+                    showToast("सफलतापूर्वक पठाइयो!");
                     setTimeout(() => window.location.href = "profile.html", 2000);
                 }
             } catch (e) { showToast("Error: " + e.message); }
