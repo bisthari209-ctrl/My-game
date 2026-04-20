@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --primary: #1a252f; --accent: #f1c40f; --danger: #c0392b; --success: #27ae60; --sidebar-width: 250px; --blue: #3498db; }
+        :root { --primary: #1a252f; --accent: #f1c40f; --danger: #e74c3c; --success: #27ae60; --sidebar-width: 250px; --blue: #3498db; }
         body { font-family: sans-serif; margin: 0; background: #f4f7f6; display: flex; height: 100vh; overflow: hidden; }
         
         .menu-toggle { display: none; position: fixed; top: 15px; left: 15px; z-index: 2001; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
@@ -19,6 +19,10 @@
         .main-content { flex: 1; overflow-y: auto; padding: 25px; transition: 0.3s; position: relative; }
         .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; overflow-x: auto; }
         
+        /* Screenshot Thumbnail Style */
+        .ss-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 1px solid #ddd; }
+        .ss-thumb:hover { border-color: var(--blue); transform: scale(1.05); }
+
         @media (max-width: 768px) {
             .menu-toggle { display: block; }
             .sidebar { position: fixed; left: -250px; height: 100%; }
@@ -33,23 +37,14 @@
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
         
-        .action-btn { padding: 6px 10px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 0.8rem; margin: 2px; }
+        .btn-group { display: flex; gap: 5px; }
+        .action-btn { padding: 8px 12px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
         .approve { background: var(--success); }
         .reject { background: var(--danger); }
         .edit-btn { background: #2980b9; }
-        .view-btn { background: var(--primary); padding: 4px 8px; font-size: 0.7rem; border-radius: 3px; color: white; border: none; cursor: pointer; display: block; margin-top: 5px; }
         .hidden { display: none; }
 
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
-        .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80%; margin-top: 50px; border-radius: 10px; }
-        .close-modal { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
-
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; box-sizing: border-box; }
-        .search-container { position: relative; margin-bottom: 15px; }
-        #userSearchInput { padding-left: 40px; border: 2px solid #34495e; font-weight: bold; }
-        .search-icon { position: absolute; left: 15px; top: 22px; color: #34495e; }
-
-        .lucky-ctrl { background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -57,17 +52,13 @@
     <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-    <div id="imgModal" class="modal">
-        <span class="close-modal" onclick="closeImg()">&times;</span>
-        <img class="modal-content" id="modalImg">
-    </div>
-
     <div class="sidebar" id="sidebar">
         <h2>RK ADMIN PANEL</h2>
         <div class="nav-link active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</div>
+        <div class="nav-link" onclick="showSection('matches')"><i class="fas fa-gamepad"></i> Match Reports</div>
+        <div class="nav-link" onclick="showSection('matchbox')"><i class="fas fa-list"></i> Match Box</div>
         <div class="nav-link" onclick="showSection('deposits')"><i class="fas fa-wallet"></i> Deposits</div>
         <div class="nav-link" onclick="showSection('withdraws')"><i class="fas fa-university"></i> Withdraws</div>
-        <div class="nav-link" onclick="showSection('matches')"><i class="fas fa-gamepad"></i> Match Results</div>
         <div class="nav-link" onclick="showSection('luckydraw')"><i class="fas fa-ticket-alt"></i> Lucky Draw</div>
         <div class="nav-link" onclick="showSection('users')"><i class="fas fa-users"></i> Users</div>
         <div class="nav-link" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</div>
@@ -75,47 +66,98 @@
 
     <div class="main-content">
         <div id="section-dashboard">
-            <h1>नमस्कार, RK!</h1>
+            <h1>Dashboard Overview</h1>
             <div class="stats-grid">
                 <div class="stat-card"><h3>कुल युजर</h3><p id="stat-totalUsers">0</p></div>
                 <div class="stat-card"><h3>डिपोजिट पेन्डिङ</h3><p id="stat-pendingDeposit">0</p></div>
                 <div class="stat-card"><h3>विथड्र पेन्डिङ</h3><p id="stat-pendingWithdraw">0</p></div>
-                <div class="stat-card"><h3>लक्की ड्र इन्ट्री</h3><p id="stat-luckyEntries">0</p></div>
+                <div class="stat-card"><h3>कुल म्याच</h3><p id="stat-matchCount">0</p></div>
+            </div>
+        </div>
+
+        <div id="section-matchbox" class="hidden">
+            <h1>Match Box (Recent Records)</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>ID</th><th>Creator</th><th>Joiner</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="matchBoxList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-matches" class="hidden">
+            <h1>Match Approval (Disputes)</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>Game ID</th><th>Players</th><th>Screenshot</th><th>Claims</th><th>Action</th></tr></thead>
+                    <tbody id="matchListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-deposits" class="hidden">
+            <h1>Deposit Requests</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>User</th><th>Amount</th><th>Proof</th><th>Action</th></tr></thead>
+                    <tbody id="depositListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-withdraws" class="hidden">
+            <h1>Withdraw Requests</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>User UID</th><th>Method</th><th>Wallet No.</th><th>Amount</th><th>Action</th></tr></thead>
+                    <tbody id="withdrawListBody"></tbody>
+                </table>
             </div>
         </div>
 
         <div id="section-luckydraw" class="hidden">
             <h1>Lucky Draw Management</h1>
-            <div class="card lucky-ctrl">
-                <h3>सिस्टमको लक्की कोड सेट गर्नुहोस्</h3>
+            <div class="card" style="background:#fffbe6;">
+                <h3>System Lucky Code</h3>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="luckyCodeInput" placeholder="५ अंकको कोड (उदा: 12345)" maxlength="5" style="flex:1;">
-                    <button class="action-btn approve" onclick="updateLuckyCode()" style="padding:0 20px;">सेट गर्नुहोस्</button>
+                    <input type="text" id="luckyCodeInput" placeholder="५ अंकको कोड" maxlength="5">
+                    <button class="action-btn approve" onclick="updateLuckyCode()">Update Code</button>
                 </div>
-                <p style="font-size:0.8rem; color:#666; margin-top:10px;">हालको कोड: <b id="currentSystemCode">---</b></p>
+                <p>हालको कोड: <b id="currentSystemCode">---</b></p>
             </div>
-
             <div class="card">
-                <h3>प्रयोगकर्ताका सहभागिताहरू (Entries)</h3>
                 <table>
-                    <thead>
-                        <tr><th>Time</th><th>User Name</th><th>Box Type</th><th>User No.</th><th>System No.</th><th>Result</th></tr>
-                    </thead>
+                    <thead><tr><th>Time</th><th>Name</th><th>User No.</th><th>System No.</th><th>Result</th></tr></thead>
                     <tbody id="luckyDrawListBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <div id="section-withdraws" class="hidden"><h1>Withdraw Requests</h1><div class="card"><table><thead><tr><th>User</th><th>Method</th><th>Wallet</th><th>Amount</th><th>Action</th></tr></thead><tbody id="withdrawListBody"></tbody></table></div></div>
-        <div id="section-deposits" class="hidden"><h1>Deposit Requests</h1><div class="card"><table><thead><tr><th>User</th><th>Amount</th><th>Proof</th><th>Action</th></tr></thead><tbody id="depositListBody"></tbody></table></div></div>
-        <div id="section-matches" class="hidden"><h1>Match Results Approval</h1><div class="card"><table><thead><tr><th>Game</th><th>Proofs</th><th>Winner</th></tr></thead><tbody id="matchListBody"></tbody></table></div></div>
-        <div id="section-users" class="hidden"><h1>Manage Users</h1><div class="search-container"><i class="fas fa-search search-icon"></i><input type="text" id="userSearchInput" placeholder="UID वा नाम..." onkeyup="searchUser()"></div><div class="card"><table id="userTable"><thead><tr><th>UID</th><th>Name</th><th>Balance</th><th>Action</th></tr></thead><tbody id="userListBody"></tbody></table></div></div>
-        <div id="section-settings" class="hidden"><h1>App Settings</h1><div class="card"><h3>App Link & Notice</h3><input type="text" id="appLinkInput" placeholder="Download Link"><textarea id="noticeText" rows="3" placeholder="Notice text..."></textarea><button class="action-btn approve" onclick="saveSettings()">Save Settings</button></div></div>
+        <div id="section-users" class="hidden">
+            <h1>Manage Users</h1>
+            <div class="card">
+                <table>
+                    <thead><tr><th>UID</th><th>Name</th><th>Balance</th><th>Action</th></tr></thead>
+                    <tbody id="userListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-settings" class="hidden">
+            <h1>Global Settings</h1>
+            <div class="card">
+                <label>App Download Link:</label>
+                <input type="text" id="appLinkInput">
+                <label>Home Notice:</label>
+                <textarea id="noticeText" rows="4"></textarea>
+                <button class="action-btn approve" style="margin-top:15px;" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
@@ -129,7 +171,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Sidebar Navigation
+        // UI Handlers
         window.toggleSidebar = () => {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('overlay').classList.toggle('active');
@@ -139,89 +181,182 @@
             document.querySelectorAll('.main-content > div').forEach(div => div.classList.add('hidden'));
             document.getElementById('section-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            if (window.innerWidth <= 768) toggleSidebar();
+            if(window.innerWidth <= 768) toggleSidebar();
         };
 
-        // --- Lucky Draw Logic (Fixed) ---
-        window.updateLuckyCode = () => {
-            const codeInput = document.getElementById('luckyCodeInput').value;
-            // String मा कन्भर्ट गरेर स्पेस हटाउने
-            const code = String(codeInput).trim();
-            
-            if(code.length !== 5) return alert("कृपया ठ्याक्कै ५ अंकको कोड हाल्नुहोस्!");
-            
-            // डेटाबेसमा सेभ गर्दा स्ट्रिङको रूपमा सेभ गर्ने
-            set(ref(db, 'settings/luckySystemCode'), code).then(() => {
-                alert("लक्की कोड " + code + " मा अपडेट भयो!");
-                document.getElementById('luckyCodeInput').value = "";
+        // Zoom Image Function
+        window.zoomImg = (url) => {
+            Swal.fire({
+                imageUrl: url,
+                imageAlt: 'Screenshot Proof',
+                confirmButtonText: 'बन्द गर्नुहोस्',
+                confirmButtonColor: '#1a252f'
             });
         };
 
-        onValue(ref(db, 'settings/luckySystemCode'), (snap) => {
-            document.getElementById('currentSystemCode').innerText = snap.val() || "सेट गरिएको छैन";
-        });
+        // --- MATCHES & MATCH BOX ---
+        onValue(ref(db, 'matches'), (snap) => {
+            const disputeList = document.getElementById('matchListBody');
+            const boxList = document.getElementById('matchBoxList');
+            disputeList.innerHTML = "";
+            boxList.innerHTML = "";
+            let matchCount = 0;
 
-        // Dashboard Stats & Lists
-        onValue(ref(db, 'luckyDrawHistory'), (snap) => {
-            const list = document.getElementById('luckyDrawListBody');
-            list.innerHTML = "";
-            let count = 0;
-            if(snap.exists()){
-                Object.keys(snap.val()).reverse().forEach(id => {
-                    count++;
-                    const item = snap.val()[id];
-                    const resStyle = item.result === "WIN" ? "background:#d4edda; color:#155724; font-weight:bold;" : "color:#721c24;";
-                    list.innerHTML += `<tr>
-                        <td>${new Date(item.time).toLocaleString()}</td>
-                        <td>${item.name}</td>
-                        <td>${item.box}</td>
-                        <td>${item.userNumber}</td>
-                        <td>${item.systemNumber}</td>
-                        <td style="${resStyle}">${item.result}</td>
+            snap.forEach(c => {
+                matchCount++;
+                const m = c.val();
+                
+                // For Match Box (All Records)
+                boxList.innerHTML += `<tr>
+                    <td>${c.key}</td>
+                    <td>${m.creatorId}</td>
+                    <td>${m.joinerId || 'Waiting'}</td>
+                    <td>रू ${m.entry}</td>
+                    <td>${m.status}</td>
+                    <td><button class="action-btn reject" onclick="rejectRequest('matches/${c.key}')">Del</button></td>
+                </tr>`;
+
+                // For Disputes
+                if(m.status === 'dispute'){
+                    disputeList.innerHTML += `<tr>
+                        <td>${c.key}</td>
+                        <td>C: ${m.creatorId}<br>J: ${m.joinerId}</td>
+                        <td>
+                            <img src="${m.creator_proof}" class="ss-thumb" onclick="zoomImg('${m.creator_proof}')">
+                            <img src="${m.joiner_proof}" class="ss-thumb" onclick="zoomImg('${m.joiner_proof}')">
+                        </td>
+                        <td>C: ${m.creator_claim}<br>J: ${m.joiner_claim}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.creatorId}',${m.prize})">Win C</button>
+                                <button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.joinerId}',${m.prize})">Win J</button>
+                                <button class="action-btn reject" onclick="cancelMatch('${c.key}', ${m.entry})">Cancel</button>
+                            </div>
+                        </td>
                     </tr>`;
-                });
-            }
-            document.getElementById('stat-luckyEntries').innerText = count;
+                }
+            });
+            document.getElementById('stat-matchCount').innerText = matchCount;
         });
 
-        // Other standard functions (Deposits, Withdraws, Users)
+        // --- DEPOSITS ---
         onValue(ref(db, 'admin/deposits'), (snap) => {
             const list = document.getElementById('depositListBody');
-            list.innerHTML = ""; let dCount = 0;
-            snap.forEach(c => { const d = c.val(); if(d.status === 'pending'){ dCount++; list.innerHTML += `<tr><td>${d.name||d.uid}</td><td>रू ${d.amount}</td><td><button class="view-btn" onclick="viewImg('${d.proofUrl}')">View</button></td><td><button class="action-btn approve" onclick="approveDeposit('${c.key}','${d.uid}',${d.amount})">Approve</button></td></tr>`; } });
-            document.getElementById('stat-pendingDeposit').innerText = dCount;
+            list.innerHTML = ""; let count = 0;
+            snap.forEach(c => {
+                const d = c.val();
+                if(d.status === 'pending'){
+                    count++;
+                    list.innerHTML += `<tr>
+                        <td>${d.name || d.uid}</td>
+                        <td>रू ${d.amount}</td>
+                        <td><img src="${d.proofUrl}" class="ss-thumb" onclick="zoomImg('${d.proofUrl}')"></td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="action-btn approve" onclick="approveDeposit('${c.key}','${d.uid}',${d.amount})">Approve</button>
+                                <button class="action-btn reject" onclick="rejectRequest('admin/deposits/${c.key}')">Reject</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            });
+            document.getElementById('stat-pendingDeposit').innerText = count;
         });
 
+        // --- WITHDRAWS ---
         onValue(ref(db, 'admin/withdraws'), (snap) => {
             const list = document.getElementById('withdrawListBody');
-            list.innerHTML = ""; let wCount = 0;
-            snap.forEach(c => { const w = c.val(); if(w.status === 'pending'){ wCount++; list.innerHTML += `<tr><td>${w.uid}</td><td>${w.method}</td><td>${w.wallet}</td><td>रू ${w.amount}</td><td><button class="action-btn approve" onclick="processWithdraw('${c.key}','${w.uid}','approved')">Approve</button></td></tr>`; } });
-            document.getElementById('stat-pendingWithdraw').innerText = wCount;
+            list.innerHTML = ""; let count = 0;
+            snap.forEach(c => {
+                const w = c.val();
+                if(w.status === 'pending'){
+                    count++;
+                    list.innerHTML += `<tr>
+                        <td>${w.uid}</td>
+                        <td>${w.method}</td>
+                        <td>${w.wallet}</td>
+                        <td>रू ${w.amount}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="action-btn approve" onclick="updateStatus('admin/withdraws/${c.key}', 'completed')">Complete</button>
+                                <button class="action-btn reject" onclick="rejectWithdraw('${c.key}','${w.uid}',${w.amount})">Reject</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            });
+            document.getElementById('stat-pendingWithdraw').innerText = count;
         });
 
+        // --- ACTIONS ---
+        window.finalizeMatch = async (mid, winId, prize) => {
+            const winRef = ref(db, `users/${winId}/balance`);
+            await runTransaction(winRef, (curr) => (curr || 0) + parseFloat(prize));
+            await update(ref(db, `matches/${mid}`), { status: 'completed', winnerId: winId });
+            Swal.fire("Winner Set", "Money added to winner", "success");
+        };
+
+        window.cancelMatch = async (mid, entry) => {
+            await update(ref(db, `matches/${mid}`), { status: 'cancelled' });
+            Swal.fire("Cancelled", "Match voided", "info");
+        };
+
+        window.approveDeposit = async (id, uid, amt) => {
+            const userBalRef = ref(db, `users/${uid}/balance`);
+            await runTransaction(userBalRef, (current) => (current || 0) + parseFloat(amt));
+            await update(ref(db, `admin/deposits/${id}`), { status: 'approved' });
+            Swal.fire("Approved", "Balance Updated", "success");
+        };
+
+        window.rejectWithdraw = async (id, uid, amt) => {
+            const userBalRef = ref(db, `users/${uid}/balance`);
+            await runTransaction(userBalRef, (current) => (current || 0) + parseFloat(amt));
+            await remove(ref(db, `admin/withdraws/${id}`));
+            Swal.fire("Rejected", "Refunded to User", "error");
+        };
+
+        window.rejectRequest = (path) => {
+            remove(ref(db, path)).then(() => Swal.fire("Removed", "Action Done", "success"));
+        };
+
+        window.updateStatus = (path, status) => {
+            update(ref(db, path), { status: status }).then(() => Swal.fire("Updated", status, "success"));
+        };
+
+        // --- USERS ---
         onValue(ref(db, 'users'), (snap) => {
             const list = document.getElementById('userListBody');
             list.innerHTML = ""; let uCount = 0;
-            snap.forEach(c => { uCount++; const u = c.val(); list.innerHTML += `<tr><td>${u.numericID||c.key}</td><td>${u.name}</td><td>रू ${u.balance}</td><td><button class="action-btn edit-btn" onclick="editBalance('${c.key}',${u.balance})">Edit</button></td></tr>`; });
+            snap.forEach(c => {
+                uCount++; const u = c.val();
+                list.innerHTML += `<tr><td>${c.key}</td><td>${u.name}</td><td>रू ${u.balance}</td><td><button class="action-btn edit-btn" onclick="editBalance('${c.key}',${u.balance})">Edit</button></td></tr>`;
+            });
             document.getElementById('stat-totalUsers').innerText = uCount;
         });
 
-        window.approveDeposit = async (id, uid, amt) => {
-            const snap = await get(ref(db, `users/${uid}/balance`));
-            update(ref(db), { [`users/${uid}/balance`]: (snap.val()||0) + parseFloat(amt), [`admin/deposits/${id}/status`]: 'approved' }).then(() => alert("Approved!"));
+        window.editBalance = (uid, oldBal) => {
+            const amt = prompt("Enter new balance:", oldBal);
+            if(amt !== null) update(ref(db, `users/${uid}`), { balance: parseFloat(amt) });
         };
 
-        window.editBalance = (uid, bal) => {
-            const n = prompt("नयाँ ब्यालेन्स:", bal);
-            if(n) update(ref(db, `users/${uid}`), { balance: parseFloat(n) });
-        };
-
+        // --- SETTINGS ---
         window.saveSettings = () => {
-            update(ref(db, 'settings'), { downloadLink: document.getElementById('appLinkInput').value, notice: document.getElementById('noticeText').value }).then(() => alert("Saved!"));
+            const link = document.getElementById('appLinkInput').value;
+            const notice = document.getElementById('noticeText').value;
+            update(ref(db, 'settings'), { downloadLink: link, notice: notice }).then(() => Swal.fire("Saved", "Updated", "success"));
         };
 
-        window.viewImg = (url) => window.open(url, '_blank');
-        window.closeImg = () => document.getElementById('imgModal').style.display = "none";
+        get(ref(db, 'settings')).then(s => {
+            if(s.exists()){
+                document.getElementById('appLinkInput').value = s.val().downloadLink || "";
+                document.getElementById('noticeText').value = s.val().notice || "";
+            }
+        });
+
+        window.updateLuckyCode = () => {
+            const code = document.getElementById('luckyCodeInput').value;
+            if(code.length === 5) set(ref(db, 'settings/luckySystemCode'), code).then(() => alert("Code Updated!"));
+        };
     </script>
 </body>
 </html>
