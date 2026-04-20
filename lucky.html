@@ -33,6 +33,14 @@
             cursor: pointer; width: 100%; margin-top: 5px;
         }
 
+        /* History Table */
+        .history-card { background: white; margin: 15px; border-radius: 15px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .history-card h3 { margin-top: 0; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #f9f9f9; }
+        .win-text { color: var(--success); font-weight: bold; }
+        .loss-text { color: var(--accent); font-weight: bold; }
+
         .box-5 { border-top: 5px solid #3498db; }
         .box-20 { border-top: 5px solid #9b59b6; }
         .box-50 { border-top: 5px solid #f1c40f; }
@@ -86,10 +94,26 @@
         </div>
     </div>
 
+    <div class="history-card">
+        <h3><i class="fas fa-history"></i> My Draw History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Box</th>
+                    <th>Number</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr><td colspan="3" style="text-align:center;">लोड हुँदैछ...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, push, update, runTransaction, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, update, runTransaction, get, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
@@ -111,6 +135,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userUID = user.uid;
+                // Fetch User Data
                 onValue(ref(db, 'users/' + user.uid), (snap) => {
                     if (snap.exists()) {
                         userName = snap.val().name || "User";
@@ -118,39 +143,61 @@
                         document.getElementById('userBalance').innerText = "रू " + currentBalance.toFixed(2);
                     }
                 });
+                // Fetch History
+                loadHistory();
             } else { window.location.href = "index.html"; }
         });
+
+        async function loadHistory() {
+            const historyRef = ref(db, 'luckyDrawHistory');
+            onValue(historyRef, (snap) => {
+                const tbody = document.getElementById('historyBody');
+                tbody.innerHTML = "";
+                let rows = [];
+                snap.forEach(child => {
+                    const d = child.val();
+                    if (d.uid === userUID) {
+                        rows.push(`<tr>
+                            <td>${d.box}</td>
+                            <td>${d.userNumber}</td>
+                            <td class="${d.result === 'WIN' ? 'win-text' : 'loss-text'}">${d.result}</td>
+                        </tr>`);
+                    }
+                });
+                tbody.innerHTML = rows.reverse().slice(0, 10).join(''); // Only show last 10
+                if (rows.length === 0) tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No history found</td></tr>";
+            });
+        }
 
         window.joinLuckyDraw = async (fee, winPrize, boxName) => {
             if (currentBalance < fee) {
                 return Swal.fire({ icon: 'error', title: 'ब्यालेन्स पुगेन!', text: 'कृपया पहिले डिपोजिट गर्नुहोस्।' });
             }
 
-            // १. युजरबाट लक्की नम्बर माग्ने
             const { value: userNumber } = await Swal.fire({
-                title: 'तपाईँको लक्की नम्बर!',
+                title: boxName + ' Box Entry',
                 input: 'number',
                 inputLabel: 'कुनै ५ अंकको नम्बर हाल्नुहोस्',
-                inputPlaceholder: 'उदा: 12345',
+                inputPlaceholder: '12345',
                 showCancelButton: true,
-                inputAttributes: { maxlength: 5 },
                 confirmButtonText: 'Submit & Pay',
+                confirmButtonColor: '#e67e22',
                 inputValidator: (value) => {
-                    if (!value || value.length < 1) return 'नम्बर हाल्न अनिवार्य छ!';
+                    if (!value) return 'नम्बर हाल्न अनिवार्य छ!';
                 }
             });
 
             if (userNumber) {
-                Swal.fire({ title: 'प्रोसेसिङ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                Swal.fire({ title: 'जाँच गर्दै...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
                 try {
-                    // २. एडमिनले सेट गरेको सिस्टम नम्बर तान्ने
+                    // १. एडमिनको गोप्य नम्बर तान्ने
                     const systemCodeSnap = await get(ref(db, 'settings/luckySystemCode'));
-                    const systemNumber = systemCodeSnap.val() || "00000";
+                    const systemNumber = String(systemCodeSnap.val() || "00000").trim();
 
                     const userRef = ref(db, 'users/' + userUID);
                     
-                    // ३. पैसा काट्ने (Transaction)
+                    // २. पैसा काट्ने
                     const payResult = await runTransaction(userRef, (userData) => {
                         if (userData && (userData.balance || 0) >= fee) {
                             userData.balance -= fee;
@@ -159,45 +206,43 @@
                     });
 
                     if (payResult.committed) {
-                        // ४. चेक गर्ने नम्बर मिल्यो कि मिलेन
-                        // String मा बदलेर चेक गर्दा म्याच हुन सजिलो हुन्छ
-                        const isWin = (String(userNumber).trim() === String(systemNumber).trim());
+                        const isWin = (String(userNumber).trim() === systemNumber);
 
                         if (isWin) {
-                            // पैसा थप्ने (Winner)
+                            // Winner logic
                             await runTransaction(userRef, (userData) => {
                                 if (userData) { userData.balance = (userData.balance || 0) + winPrize; }
                                 return userData;
                             });
                         }
 
-                        // ५. हिस्ट्री सेभ गर्ने
+                        // ३. हिस्ट्री सेभ गर्ने
                         const historyKey = push(ref(db, 'luckyDrawHistory')).key;
                         await update(ref(db, `luckyDrawHistory/${historyKey}`), {
                             uid: userUID,
                             name: userName,
                             box: boxName,
                             userNumber: userNumber,
-                            systemNumber: systemNumber,
+                            systemNumber: systemNumber, // Admin history को लागि डेटाबेस मा रहन्छ
                             result: isWin ? "WIN" : "LOSS",
                             prize: isWin ? winPrize : 0,
                             time: Date.now()
                         });
 
-                        // ६. फाइनल रिजल्ट देखाउने
+                        // ४. फाइनल रिजल्ट (गोप्य नम्बर नदेखाई)
                         if (isWin) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'बधाई छ!',
-                                text: `नम्बर मिल्यो! तपाईँले रू ${winPrize} जित्नुभयो।`,
+                                text: `तपाईँको नम्बर मिल्यो! रू ${winPrize} प्राप्त गर्नुभयो।`,
                                 confirmButtonColor: '#27ae60'
                             });
                         } else {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'अहँ मिलेन!',
-                                text: `तपाईँको नम्बर: ${userNumber} | सिस्टम नम्बर: ${systemNumber}`,
-                                footer: 'फेरि प्रयास गर्नुहोस्!'
+                                text: `तपाईँले छान्नुभएको नम्बर (${userNumber}) र लक्की नम्बर मिलेन।`,
+                                footer: 'अर्को पटक फेरि प्रयास गर्नुहोस्!'
                             });
                         }
                     }
