@@ -45,6 +45,11 @@
         .hidden { display: none; }
 
         input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; box-sizing: border-box; }
+        
+        /* Search Box Style */
+        .search-container { margin-bottom: 15px; position: relative; }
+        .search-container input { padding-left: 35px; border: 2px solid var(--primary); }
+        .search-container i { position: absolute; left: 12px; top: 22px; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -135,6 +140,10 @@
 
         <div id="section-users" class="hidden">
             <h1>Manage Users</h1>
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="userSearchInput" placeholder="UID वा नामबाट खोज्नुहोस्..." onkeyup="filterUsers()">
+            </div>
             <div class="card">
                 <table>
                     <thead><tr><th>UID</th><th>Name</th><th>Balance</th><th>Action</th></tr></thead>
@@ -184,62 +193,77 @@
             if(window.innerWidth <= 768) toggleSidebar();
         };
 
-        // Zoom Image Function
         window.zoomImg = (url) => {
             Swal.fire({
                 imageUrl: url,
-                imageAlt: 'Screenshot Proof',
-                confirmButtonText: 'बन्द गर्नुहोस्',
-                confirmButtonColor: '#1a252f'
+                imageAlt: 'Proof',
+                confirmButtonText: 'बन्द गर्नुहोस्'
             });
         };
 
-        // --- MATCHES & MATCH BOX ---
+        // --- USER SEARCH FILTER ---
+        window.filterUsers = () => {
+            let input = document.getElementById("userSearchInput").value.toUpperCase();
+            let table = document.getElementById("userListBody");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 0; i < tr.length; i++) {
+                let tdId = tr[i].getElementsByTagName("td")[0]; // UID column
+                let tdName = tr[i].getElementsByTagName("td")[1]; // Name column
+                if (tdId || tdName) {
+                    let txtValueId = tdId.textContent || tdId.innerText;
+                    let txtValueName = tdName.textContent || tdName.innerText;
+                    if (txtValueId.toUpperCase().indexOf(input) > -1 || txtValueName.toUpperCase().indexOf(input) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        };
+
+        // --- LOAD DATA FROM FIREBASE ---
+        onValue(ref(db, 'users'), (snap) => {
+            const list = document.getElementById('userListBody');
+            list.innerHTML = ""; let uCount = 0;
+            snap.forEach(c => {
+                uCount++; const u = c.val();
+                list.innerHTML += `<tr>
+                    <td>${c.key}</td>
+                    <td>${u.name}</td>
+                    <td>रू ${u.balance}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="action-btn edit-btn" onclick="editBalance('${c.key}',${u.balance})">Edit</button>
+                            <button class="action-btn reject" onclick="rejectRequest('users/${c.key}')">Ban</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('stat-totalUsers').innerText = uCount;
+        });
+
         onValue(ref(db, 'matches'), (snap) => {
             const disputeList = document.getElementById('matchListBody');
             const boxList = document.getElementById('matchBoxList');
-            disputeList.innerHTML = "";
-            boxList.innerHTML = "";
+            disputeList.innerHTML = ""; boxList.innerHTML = "";
             let matchCount = 0;
-
             snap.forEach(c => {
-                matchCount++;
-                const m = c.val();
-                
-                // For Match Box (All Records)
-                boxList.innerHTML += `<tr>
-                    <td>${c.key}</td>
-                    <td>${m.creatorId}</td>
-                    <td>${m.joinerId || 'Waiting'}</td>
-                    <td>रू ${m.entry}</td>
-                    <td>${m.status}</td>
-                    <td><button class="action-btn reject" onclick="rejectRequest('matches/${c.key}')">Del</button></td>
-                </tr>`;
-
-                // For Disputes
+                matchCount++; const m = c.val();
+                boxList.innerHTML += `<tr><td>${c.key}</td><td>${m.creatorId}</td><td>${m.joinerId || 'Waiting'}</td><td>रू ${m.entry}</td><td>${m.status}</td><td><button class="action-btn reject" onclick="rejectRequest('matches/${c.key}')">Del</button></td></tr>`;
                 if(m.status === 'dispute'){
                     disputeList.innerHTML += `<tr>
                         <td>${c.key}</td>
                         <td>C: ${m.creatorId}<br>J: ${m.joinerId}</td>
-                        <td>
-                            <img src="${m.creator_proof}" class="ss-thumb" onclick="zoomImg('${m.creator_proof}')">
-                            <img src="${m.joiner_proof}" class="ss-thumb" onclick="zoomImg('${m.joiner_proof}')">
-                        </td>
+                        <td><img src="${m.creator_proof}" class="ss-thumb" onclick="zoomImg('${m.creator_proof}')"> <img src="${m.joiner_proof}" class="ss-thumb" onclick="zoomImg('${m.joiner_proof}')"></td>
                         <td>C: ${m.creator_claim}<br>J: ${m.joiner_claim}</td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.creatorId}',${m.prize})">Win C</button>
-                                <button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.joinerId}',${m.prize})">Win J</button>
-                                <button class="action-btn reject" onclick="cancelMatch('${c.key}', ${m.entry})">Cancel</button>
-                            </div>
-                        </td>
+                        <td><div class="btn-group"><button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.creatorId}',${m.prize})">Win C</button><button class="action-btn approve" onclick="finalizeMatch('${c.key}','${m.joinerId}',${m.prize})">Win J</button><button class="action-btn reject" onclick="cancelMatch('${c.key}', ${m.entry})">Cancel</button></div></td>
                     </tr>`;
                 }
             });
             document.getElementById('stat-matchCount').innerText = matchCount;
         });
 
-        // --- DEPOSITS ---
         onValue(ref(db, 'admin/deposits'), (snap) => {
             const list = document.getElementById('depositListBody');
             list.innerHTML = ""; let count = 0;
@@ -247,23 +271,12 @@
                 const d = c.val();
                 if(d.status === 'pending'){
                     count++;
-                    list.innerHTML += `<tr>
-                        <td>${d.name || d.uid}</td>
-                        <td>रू ${d.amount}</td>
-                        <td><img src="${d.proofUrl}" class="ss-thumb" onclick="zoomImg('${d.proofUrl}')"></td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="action-btn approve" onclick="approveDeposit('${c.key}','${d.uid}',${d.amount})">Approve</button>
-                                <button class="action-btn reject" onclick="rejectRequest('admin/deposits/${c.key}')">Reject</button>
-                            </div>
-                        </td>
-                    </tr>`;
+                    list.innerHTML += `<tr><td>${d.name || d.uid}</td><td>रू ${d.amount}</td><td><img src="${d.proofUrl}" class="ss-thumb" onclick="zoomImg('${d.proofUrl}')"></td><td><div class="btn-group"><button class="action-btn approve" onclick="approveDeposit('${c.key}','${d.uid}',${d.amount})">Approve</button><button class="action-btn reject" onclick="rejectRequest('admin/deposits/${c.key}')">Reject</button></div></td></tr>`;
                 }
             });
             document.getElementById('stat-pendingDeposit').innerText = count;
         });
 
-        // --- WITHDRAWS ---
         onValue(ref(db, 'admin/withdraws'), (snap) => {
             const list = document.getElementById('withdrawListBody');
             list.innerHTML = ""; let count = 0;
@@ -271,29 +284,18 @@
                 const w = c.val();
                 if(w.status === 'pending'){
                     count++;
-                    list.innerHTML += `<tr>
-                        <td>${w.uid}</td>
-                        <td>${w.method}</td>
-                        <td>${w.wallet}</td>
-                        <td>रू ${w.amount}</td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="action-btn approve" onclick="updateStatus('admin/withdraws/${c.key}', 'completed')">Complete</button>
-                                <button class="action-btn reject" onclick="rejectWithdraw('${c.key}','${w.uid}',${w.amount})">Reject</button>
-                            </div>
-                        </td>
-                    </tr>`;
+                    list.innerHTML += `<tr><td>${w.uid}</td><td>${w.method}</td><td>${w.wallet}</td><td>रू ${w.amount}</td><td><div class="btn-group"><button class="action-btn approve" onclick="updateStatus('admin/withdraws/${c.key}', 'completed')">Complete</button><button class="action-btn reject" onclick="rejectWithdraw('${c.key}','${w.uid}',${w.amount})">Reject</button></div></td></tr>`;
                 }
             });
             document.getElementById('stat-pendingWithdraw').innerText = count;
         });
 
-        // --- ACTIONS ---
+        // --- FUNCTIONS ---
         window.finalizeMatch = async (mid, winId, prize) => {
             const winRef = ref(db, `users/${winId}/balance`);
             await runTransaction(winRef, (curr) => (curr || 0) + parseFloat(prize));
             await update(ref(db, `matches/${mid}`), { status: 'completed', winnerId: winId });
-            Swal.fire("Winner Set", "Money added to winner", "success");
+            Swal.fire("Done", "Winner set", "success");
         };
 
         window.cancelMatch = async (mid, entry) => {
@@ -305,45 +307,29 @@
             const userBalRef = ref(db, `users/${uid}/balance`);
             await runTransaction(userBalRef, (current) => (current || 0) + parseFloat(amt));
             await update(ref(db, `admin/deposits/${id}`), { status: 'approved' });
-            Swal.fire("Approved", "Balance Updated", "success");
+            Swal.fire("Success", "Approved", "success");
         };
 
         window.rejectWithdraw = async (id, uid, amt) => {
             const userBalRef = ref(db, `users/${uid}/balance`);
             await runTransaction(userBalRef, (current) => (current || 0) + parseFloat(amt));
             await remove(ref(db, `admin/withdraws/${id}`));
-            Swal.fire("Rejected", "Refunded to User", "error");
+            Swal.fire("Rejected", "Refunded", "error");
         };
 
         window.rejectRequest = (path) => {
-            remove(ref(db, path)).then(() => Swal.fire("Removed", "Action Done", "success"));
+            if(confirm("के तपाईं यो हटाउन चाहनुहुन्छ?")) remove(ref(db, path));
         };
-
-        window.updateStatus = (path, status) => {
-            update(ref(db, path), { status: status }).then(() => Swal.fire("Updated", status, "success"));
-        };
-
-        // --- USERS ---
-        onValue(ref(db, 'users'), (snap) => {
-            const list = document.getElementById('userListBody');
-            list.innerHTML = ""; let uCount = 0;
-            snap.forEach(c => {
-                uCount++; const u = c.val();
-                list.innerHTML += `<tr><td>${c.key}</td><td>${u.name}</td><td>रू ${u.balance}</td><td><button class="action-btn edit-btn" onclick="editBalance('${c.key}',${u.balance})">Edit</button></td></tr>`;
-            });
-            document.getElementById('stat-totalUsers').innerText = uCount;
-        });
 
         window.editBalance = (uid, oldBal) => {
-            const amt = prompt("Enter new balance:", oldBal);
+            const amt = prompt("नयाँ ब्यालेन्स हाल्नुहोस्:", oldBal);
             if(amt !== null) update(ref(db, `users/${uid}`), { balance: parseFloat(amt) });
         };
 
-        // --- SETTINGS ---
         window.saveSettings = () => {
             const link = document.getElementById('appLinkInput').value;
             const notice = document.getElementById('noticeText').value;
-            update(ref(db, 'settings'), { downloadLink: link, notice: notice }).then(() => Swal.fire("Saved", "Updated", "success"));
+            update(ref(db, 'settings'), { downloadLink: link, notice: notice }).then(() => Swal.fire("Saved", "Settings Updated", "success"));
         };
 
         get(ref(db, 'settings')).then(s => {
@@ -352,11 +338,6 @@
                 document.getElementById('noticeText').value = s.val().notice || "";
             }
         });
-
-        window.updateLuckyCode = () => {
-            const code = document.getElementById('luckyCodeInput').value;
-            if(code.length === 5) set(ref(db, 'settings/luckySystemCode'), code).then(() => alert("Code Updated!"));
-        };
     </script>
 </body>
 </html>
