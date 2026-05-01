@@ -74,7 +74,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, runTransaction, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
@@ -122,18 +122,13 @@
             btn.disabled = true; btn.innerText = "जाँच गर्दै...";
 
             try {
-                // १. रेफरल कोड (Numeric ID) चेक गर्ने
-                const snapshot = await get(ref(db, 'users'));
-                let referrerUID = null;
+                // १. रेफरल कोड (Numeric ID) भएको मान्छे खोज्ने
+                const userQuery = query(ref(db, 'users'), orderByChild('numericID'), equalTo(referCodeInput));
+                const snapshot = await get(userQuery);
                 
+                let referrerUID = null;
                 if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    for (let key in data) {
-                        if (data[key].numericID === referCodeInput) {
-                            referrerUID = key;
-                            break;
-                        }
-                    }
+                    referrerUID = Object.keys(snapshot.val())[0];
                 }
 
                 if (!referrerUID) {
@@ -150,11 +145,11 @@
                 // ३. आफ्नो लागि नयाँ ६ अंकको Numeric ID बनाउने
                 const myNumericID = Math.floor(100000 + Math.random() * 900000).toString();
 
-                // ४. नयाँ प्रयोगकर्ताको डाटा सेभ गर्ने
+                // ४. नयाँ प्रयोगकर्ताको डाटा सेभ गर्ने (यसलाई रू ५ बोनस दिने)
                 await set(ref(db, 'users/' + user.uid), {
                     name: name,
                     email: email,
-                    balance: 5, // साइन-अप बोनस
+                    balance: 5, 
                     numericID: myNumericID,
                     referredBy: referCodeInput,
                     uid: user.uid,
@@ -162,7 +157,7 @@
                     joinedAt: Date.now()
                 });
 
-                // ५. रेफर गर्ने साथीलाई रु ५ बोनस दिने (Atomic Update)
+                // ५. रेफर गर्ने साथीलाई रू ५ बोनस दिने र काउन्ट बढाउने (Atomic Transaction)
                 const referrerRef = ref(db, 'users/' + referrerUID);
                 await runTransaction(referrerRef, (userData) => {
                     if (userData) {
@@ -178,6 +173,7 @@
             } catch (error) {
                 let errorMsg = "दर्ता विफल भयो।";
                 if(error.code === 'auth/email-already-in-use') errorMsg = "यो इमेल पहिल्यै प्रयोगमा छ।";
+                console.error(error);
                 toast(errorMsg, "error");
                 btn.disabled = false; btn.innerText = "REGISTER";
             }
