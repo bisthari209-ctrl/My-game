@@ -14,70 +14,77 @@
             --banking: #3498db;
             --white: #ffffff; 
         }
-        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f0f2f5; color: #333; padding-bottom: 50px; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background: #f0f2f5; color: #333; overflow-x: hidden; }
         
-        .header { background: var(--primary); color: white; padding: 20px; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 1000; }
-        .header a { color: white; text-decoration: none; font-size: 1.2rem; }
-        .header h3 { margin: 0; font-size: 1.1rem; }
+        .header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; }
+        .header a { color: white; text-decoration: none; }
+        .header h3 { margin: 0; font-size: 1rem; }
 
-        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .container { padding: 10px; max-width: 450px; margin: auto; }
+
+        .deposit-notice {
+            background: #fff9c4; border-left: 4px solid #fbc02d;
+            padding: 8px 12px; border-radius: 6px; font-size: 0.75rem;
+            margin-bottom: 12px; color: #5d4037; font-weight: 500;
+        }
+
+        .payment-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 8px; margin-bottom: 12px;
+        }
+        .pay-item {
+            background: white; padding: 8px 4px; border-radius: 12px;
+            text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer; border: 2px solid transparent; transition: 0.2s;
+        }
+        .pay-item img { width: 32px; height: 32px; border-radius: 6px; margin-bottom: 4px; }
+        .pay-item span { display: block; font-size: 0.65rem; font-weight: 700; }
+        .pay-item.active { border-color: var(--primary); background: #eef2f3; }
 
         .wallet-card { 
-            background: var(--white); 
-            border-radius: 20px; 
-            padding: 20px; 
-            margin-bottom: 25px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
-            border: 1px solid #e0e0e0; 
-            text-align: center;
+            display: none; background: var(--white); border-radius: 15px; 
+            padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); 
+            text-align: center; animation: fadeIn 0.3s ease;
         }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .wallet-header { 
-            display: flex; align-items: center; justify-content: center; 
-            gap: 12px; font-weight: 700; font-size: 1.2rem; 
-            padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #f0f0f0;
-        }
-        .wallet-header img { width: 35px; height: 35px; border-radius: 8px; }
+        .wallet-header { font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
 
         .qr-box {
-            background: #f9f9f9; padding: 12px; border-radius: 15px;
-            display: inline-block; margin-bottom: 10px; border: 1px dashed #ccc;
+            background: #f9f9f9; padding: 8px; border-radius: 10px;
+            display: inline-block; margin-bottom: 8px; border: 1px solid #eee;
         }
-        .qr-img { width: 180px; height: 180px; border-radius: 8px; display: block; }
+        .qr-img { width: 140px; height: 140px; display: block; }
 
-        /* Copy & Download Buttons */
-        .action-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .action-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
         .btn-action { 
-            padding: 8px 15px; border-radius: 8px; border: none; font-size: 0.85rem; 
-            cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;
-            background: #eee; color: #333; transition: 0.2s;
+            padding: 6px 12px; border-radius: 6px; border: none; font-size: 0.75rem; 
+            cursor: pointer; display: flex; align-items: center; gap: 4px;
+            background: #f0f0f0; color: #333; font-weight: 600;
         }
-        .btn-action:active { transform: scale(0.95); }
         
-        .num-display { font-weight: bold; font-size: 1rem; color: var(--primary); margin-bottom: 5px; display: block; }
+        .num-display { font-weight: bold; font-size: 0.9rem; color: var(--primary); margin-bottom: 10px; display: block; }
 
-        .input-group { text-align: left; margin-bottom: 15px; }
-        label { display: block; font-size: 0.8rem; font-weight: 600; color: #777; margin-bottom: 5px; }
-        
+        .input-row { display: flex; gap: 10px; text-align: left; margin-bottom: 12px; }
+        .input-group { flex: 1; }
+        label { display: block; font-size: 0.7rem; font-weight: 600; color: #777; margin-bottom: 3px; }
         .input-box { 
-            width: 100%; padding: 12px; border: 1.5px solid #ececec; 
-            border-radius: 10px; box-sizing: border-box; font-size: 0.95rem; 
+            width: 100%; padding: 10px; border: 1px solid #ddd; 
+            border-radius: 8px; box-sizing: border-box; font-size: 0.85rem;
         }
 
         .btn-done { 
-            color: white; border: none; width: 100%; padding: 14px; 
-            border-radius: 10px; font-weight: bold; font-size: 1rem; 
-            cursor: pointer; transition: 0.3s;
+            color: white; border: none; width: 100%; padding: 12px; 
+            border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; 
         }
 
-        .esewa-c { color: var(--esewa); } .esewa-bg { background: var(--esewa); }
-        .khalti-c { color: var(--khalti); } .khalti-bg { background: var(--khalti); }
-        .imepay-c { color: var(--imepay); } .imepay-bg { background: var(--imepay); }
-        .banking-c { color: var(--banking); } .banking-bg { background: var(--banking); }
+        .esewa-bg { background: var(--esewa); }
+        .khalti-bg { background: var(--khalti); }
+        .imepay-bg { background: var(--imepay); }
+        .banking-bg { background: var(--banking); }
 
-        #toast { visibility: hidden; min-width: 250px; background: #333; color: #fff; text-align: center; border-radius: 50px; padding: 14px; position: fixed; z-index: 4000; left: 50%; bottom: 40px; transform: translateX(-50%); }
-        #toast.show { visibility: visible; animation: fadein 0.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
+        #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 30px; padding: 10px; position: fixed; z-index: 4000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 0.8rem; }
+        #toast.show { visibility: visible; }
     </style>
 </head>
 <body>
@@ -90,98 +97,87 @@
     </div>
 
     <div class="container">
+        <div class="deposit-notice">
+            <i class="fas fa-info-circle"></i> भुक्तानीको लागि वालेट रोज्नुहोस्:
+        </div>
+        
+        <div class="payment-grid">
+            <div id="btn_esewa" class="pay-item active" onclick="showWallet('esewa', this)">
+                <img src="https://i.ibb.co/XrVYFwL7/esewa-icon.png">
+                <span>eSewa</span>
+            </div>
+            <div class="pay-item" onclick="showWallet('khalti', this)">
+                <img src="https://i.ibb.co/4wL8s0x9/khalti-icon.png">
+                <span>Khalti</span>
+            </div>
+            <div class="pay-item" onclick="showWallet('imepay', this)">
+                <img src="https://i.ibb.co/Qv8mWDY0/imepay-icon.png">
+                <span>IME Pay</span>
+            </div>
+            <div class="pay-item" onclick="showWallet('banking', this)">
+                <img src="https://i.ibb.co/ycF2R2J6/banking-icon.png">
+                <span>Banking</span>
+            </div>
+        </div>
 
-        <div class="wallet-card">
-            <div class="wallet-header esewa-c">
-                <img src="https://i.ibb.co/XrVYFwL7/esewa-icon.png"> eSewa
-            </div>
-            <div class="qr-box">
-                <img src="https://i.ibb.co/vR1Fm9w/esewa-qr.png" class="qr-img" id="qr_esewa">
-            </div>
+        <div id="card_esewa" class="wallet-card" style="display: block;">
+            <div class="wallet-header" style="color:var(--esewa)">eSewa Payment</div>
+            <div class="qr-box"><img src="https://i.ibb.co/vR1Fm9w/esewa-qr.png" class="qr-img"></div>
             <span class="num-display">9748253225</span>
             <div class="action-row">
                 <button class="btn-action" onclick="copyNum('9748253225')"><i class="fas fa-copy"></i> Copy</button>
-                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/vR1Fm9w/esewa-qr.png', 'eSewa_QR')"><i class="fas fa-download"></i> Download</button>
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/vR1Fm9w/esewa-qr.png', 'eSewa')"><i class="fas fa-download"></i> Save</button>
             </div>
-            <div class="input-group">
-                <label>रकम (Min. रू ५०)</label>
-                <input type="number" class="input-box" id="amt_esewa" placeholder="Amount">
+            <div class="input-row">
+                <div class="input-group"><label>Amount (रू ५०+)</label><input type="number" class="input-box" id="amt_esewa" placeholder="0.00"></div>
+                <div class="input-group"><label>Screenshot</label><input type="file" class="input-box" id="file_esewa" accept="image/*"></div>
             </div>
-            <div class="input-group">
-                <label>Screenshot</label>
-                <input type="file" class="input-box" id="file_esewa" accept="image/*">
-            </div>
-            <button class="btn-done esewa-bg" onclick="handleDeposit('esewa')">DONE / SUBMIT</button>
+            <button class="btn-done esewa-bg" onclick="handleDeposit(event, 'esewa')">SUBMIT NOW</button>
         </div>
 
-        <div class="wallet-card">
-            <div class="wallet-header khalti-c">
-                <img src="https://i.ibb.co/4wL8s0x9/khalti-icon.png"> Khalti
-            </div>
-            <div class="qr-box">
-                <img src="https://i.ibb.co/0jYBY45J/khalti-qr.png" class="qr-img" id="qr_khalti">
-            </div>
+        <div id="card_khalti" class="wallet-card">
+            <div class="wallet-header" style="color:var(--khalti)">Khalti Payment</div>
+            <div class="qr-box"><img src="https://i.ibb.co/0jYBY45J/khalti-qr.png" class="qr-img"></div>
             <span class="num-display">9748253225</span>
             <div class="action-row">
                 <button class="btn-action" onclick="copyNum('9748253225')"><i class="fas fa-copy"></i> Copy</button>
-                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/0jYBY45J/khalti-qr.png', 'Khalti_QR')"><i class="fas fa-download"></i> Download</button>
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/0jYBY45J/khalti-qr.png', 'Khalti')"><i class="fas fa-download"></i> Save</button>
             </div>
-            <div class="input-group">
-                <label>रकम (Min. रू ५०)</label>
-                <input type="number" class="input-box" id="amt_khalti" placeholder="Amount">
+            <div class="input-row">
+                <div class="input-group"><label>Amount (रू ५०+)</label><input type="number" class="input-box" id="amt_khalti" placeholder="0.00"></div>
+                <div class="input-group"><label>Screenshot</label><input type="file" class="input-box" id="file_khalti" accept="image/*"></div>
             </div>
-            <div class="input-group">
-                <label>Screenshot</label>
-                <input type="file" class="input-box" id="file_khalti" accept="image/*">
-            </div>
-            <button class="btn-done khalti-bg" onclick="handleDeposit('khalti')">DONE / SUBMIT</button>
+            <button class="btn-done khalti-bg" onclick="handleDeposit(event, 'khalti')">SUBMIT NOW</button>
         </div>
 
-        <div class="wallet-card">
-            <div class="wallet-header imepay-c">
-                <img src="https://i.ibb.co/Qv8mWDY0/imepay-icon.png"> IME Pay
-            </div>
-            <div class="qr-box">
-                <img src="https://i.ibb.co/rG7kNxk2/imepay-qr.png" class="qr-img" id="qr_imepay">
-            </div>
+        <div id="card_imepay" class="wallet-card">
+            <div class="wallet-header" style="color:var(--imepay)">IME Pay Payment</div>
+            <div class="qr-box"><img src="https://i.ibb.co/rG7kNxk2/imepay-qr.png" class="qr-img"></div>
             <span class="num-display">9748253225</span>
             <div class="action-row">
                 <button class="btn-action" onclick="copyNum('9748253225')"><i class="fas fa-copy"></i> Copy</button>
-                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/rG7kNxk2/imepay-qr.png', 'IMEPay_QR')"><i class="fas fa-download"></i> Download</button>
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/rG7kNxk2/imepay-qr.png', 'IMEPay')"><i class="fas fa-download"></i> Save</button>
             </div>
-            <div class="input-group">
-                <label>रकम (Min. रू ५०)</label>
-                <input type="number" class="input-box" id="amt_imepay" placeholder="Amount">
+            <div class="input-row">
+                <div class="input-group"><label>Amount (रू ५०+)</label><input type="number" class="input-box" id="amt_imepay" placeholder="0.00"></div>
+                <div class="input-group"><label>Screenshot</label><input type="file" class="input-box" id="file_imepay" accept="image/*"></div>
             </div>
-            <div class="input-group">
-                <label>Screenshot</label>
-                <input type="file" class="input-box" id="file_imepay" accept="image/*">
-            </div>
-            <button class="btn-done imepay-bg" onclick="handleDeposit('imepay')">DONE / SUBMIT</button>
+            <button class="btn-done imepay-bg" onclick="handleDeposit(event, 'imepay')">SUBMIT NOW</button>
         </div>
 
-        <div class="wallet-card">
-            <div class="wallet-header banking-c">
-                <img src="https://i.ibb.co/ycF2R2J6/banking-icon.png"> Banking (Fonepay)
-            </div>
-            <div class="qr-box">
-                <img src="https://i.ibb.co/gFD30p5G/banking-qr.png" class="qr-img" id="qr_banking">
-            </div>
+        <div id="card_banking" class="wallet-card">
+            <div class="wallet-header" style="color:var(--banking)">Fonepay (Banking)</div>
+            <div class="qr-box"><img src="https://i.ibb.co/gFD30p5G/banking-qr.png" class="qr-img"></div>
             <span class="num-display">RK LUDO CENTER</span>
             <div class="action-row">
-                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/gFD30p5G/banking-qr.png', 'Banking_QR')"><i class="fas fa-download"></i> Download QR</button>
+                <button class="btn-action" onclick="downloadQR('https://i.ibb.co/gFD30p5G/banking-qr.png', 'Banking')"><i class="fas fa-download"></i> Save QR</button>
             </div>
-            <div class="input-group">
-                <label>रकम (Min. रू ५०)</label>
-                <input type="number" class="input-box" id="amt_banking" placeholder="Amount">
+            <div class="input-row">
+                <div class="input-group"><label>Amount (रू ५०+)</label><input type="number" class="input-box" id="amt_banking" placeholder="0.00"></div>
+                <div class="input-group"><label>Screenshot</label><input type="file" class="input-box" id="file_banking" accept="image/*"></div>
             </div>
-            <div class="input-group">
-                <label>Screenshot</label>
-                <input type="file" class="input-box" id="file_banking" accept="image/*">
-            </div>
-            <button class="btn-done banking-bg" onclick="handleDeposit('banking')">DONE / SUBMIT</button>
+            <button class="btn-done banking-bg" onclick="handleDeposit(event, 'banking')">SUBMIT NOW</button>
         </div>
-
     </div>
 
     <script type="module">
@@ -189,7 +185,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, push, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // नयाँ Firebase Configuration (mero-ludo)
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
@@ -202,51 +197,68 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const IMGBB_API_KEY = "1ce07fc2347e93005cf3399105421644";
+        const IMGBB_API_KEY = "21e168aa171998d73ef8f4bc18d5d282";
+
+        window.showWallet = (id, el) => {
+            document.querySelectorAll('.wallet-card').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.pay-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('card_' + id).style.display = 'block';
+            el.classList.add('active');
+        };
 
         window.copyNum = (num) => {
             navigator.clipboard.writeText(num);
-            showToast("नम्बर कपी गरियो: " + num);
+            showToast("कपी गरियो: " + num);
         };
 
         window.downloadQR = (url, name) => {
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = name + ".png";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const link = document.createElement("a"); link.href = url; link.download = name + "_QR.png";
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
-        window.handleDeposit = async (method) => {
+        // --- Optimized Deposit Function with Compression ---
+        window.handleDeposit = async (event, method) => {
+            const btn = event.target;
             const amt = document.getElementById(`amt_${method}`).value;
             const fileInput = document.getElementById(`file_${method}`);
             
-            if (!auth.currentUser) return;
-            if (amt < 50) return showToast("न्यूनतम रू ५० हुनुपर्छ!");
-            if (!fileInput.files[0]) return showToast("Screenshot हाल्नुहोस्!");
+            if (!auth.currentUser) return showToast("लगइन गर्नुहोस्!");
+            if (!amt || amt < 50) return showToast("रू ५० भन्दा कम भयो!");
+            if (!fileInput.files[0]) return showToast("Screenshot छान्नुहोस्!");
 
-            const btn = event.target;
-            btn.innerText = "पख्नुहोस्..."; btn.disabled = true;
+            btn.innerText = "Fast Uploading..."; btn.disabled = true;
 
             try {
-                const userSnap = await get(ref(db, 'users/' + auth.currentUser.uid));
-                const userData = userSnap.val();
-                const numID = userData?.numericID || "N/A";
-                const userName = userData?.name || "Unknown";
+                // Compression Logic: Reduces file size to speed up ImgBB upload
+                const file = fileInput.files[0];
+                const blob = await new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const scale = Math.min(800 / img.width, 1); // Limits width to 800px
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob(resolve, 'image/jpeg', 0.6); // 60% quality compression
+                    };
+                    img.src = URL.createObjectURL(file);
+                });
 
                 const formData = new FormData();
-                formData.append("image", fileInput.files[0]);
-                
+                formData.append("image", blob, "proof.jpg");
+
                 const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
                 const result = await res.json();
 
                 if (result.success) {
+                    const userSnap = await get(ref(db, 'users/' + auth.currentUser.uid));
+                    const userData = userSnap.val();
                     const newKey = push(ref(db, 'admin/deposits')).key;
                     const depData = {
                         uid: auth.currentUser.uid,
-                        name: userName,
-                        numericID: numID,
+                        name: userData?.name || "User",
+                        numericID: userData?.numericID || "N/A",
                         amount: parseFloat(amt),
                         method: method.toUpperCase(),
                         status: 'pending',
@@ -254,23 +266,22 @@
                         time: Date.now(),
                         type: 'Deposit'
                     };
-                    
                     const updates = {};
                     updates[`/admin/deposits/${newKey}`] = depData;
                     updates[`/users/${auth.currentUser.uid}/history/${newKey}`] = depData;
-                    
                     await update(ref(db), updates);
-                    showToast("सफलतापूर्वक पठाइयो!");
-                    setTimeout(() => window.location.href = "profile.html", 2000);
+                    showToast("रिक्वेस्ट सफल!");
+                    setTimeout(() => window.location.href = "profile.html", 1500);
+                } else {
+                    showToast("अपलोड फेल!");
                 }
             } catch (e) { showToast("Error: " + e.message); }
-            finally { btn.innerText = "DONE / SUBMIT"; btn.disabled = false; }
+            finally { btn.innerText = "SUBMIT NOW"; btn.disabled = false; }
         };
 
         function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.innerText = msg; t.className = "show";
-            setTimeout(() => { t.className = ""; }, 3000);
+            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
+            setTimeout(() => { t.className = ""; }, 2500);
         }
 
         onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "index.html"; });
