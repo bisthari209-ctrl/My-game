@@ -122,30 +122,29 @@
             btn.disabled = true; btn.innerText = "जाँच गर्दै...";
 
             try {
-                // १. रेफरल कोड (Numeric ID) भएको मान्छे खोज्ने
-                const userQuery = query(ref(db, 'users'), orderByChild('numericID'), equalTo(referCodeInput));
+                // १. रेफरल कोड भएको मान्छे डाटाबेसमा खोज्ने
+                const usersRef = ref(db, 'users');
+                const userQuery = query(usersRef, orderByChild('numericID'), equalTo(referCodeInput));
                 const snapshot = await get(userQuery);
                 
-                let referrerUID = null;
-                if (snapshot.exists()) {
-                    referrerUID = Object.keys(snapshot.val())[0];
-                }
-
-                if (!referrerUID) {
+                if (!snapshot.exists()) {
                     btn.disabled = false; btn.innerText = "REGISTER";
                     return toast("गलत रेफरल कोड! कृपया सही कोड माग्नुहोस्।", "error");
                 }
 
+                const referrerData = snapshot.val();
+                const referrerUID = Object.keys(referrerData)[0];
+
                 btn.innerText = "खाता बनाउँदै...";
                 
-                // २. नयाँ प्रयोगकर्ता बनाउने
+                // २. Firebase Auth मा नयाँ प्रयोगकर्ता बनाउने
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
                 
-                // ३. आफ्नो लागि नयाँ ६ अंकको Numeric ID बनाउने
+                // ३. नयाँ युजरको लागि आफ्नै ६ अंकको Numeric ID
                 const myNumericID = Math.floor(100000 + Math.random() * 900000).toString();
 
-                // ४. नयाँ प्रयोगकर्ताको डाटा सेभ गर्ने (यसलाई रू ५ बोनस दिने)
+                // ४. नयाँ प्रयोगकर्ताको प्रोफाइल सेभ गर्ने (रू ५ बोनस सहित)
                 await set(ref(db, 'users/' + user.uid), {
                     name: name,
                     email: email,
@@ -157,7 +156,7 @@
                     joinedAt: Date.now()
                 });
 
-                // ५. रेफर गर्ने साथीलाई रू ५ बोनस दिने र काउन्ट बढाउने (Atomic Transaction)
+                // ५. रेफर गर्ने साथीलाई रू ५ दिने र काउन्ट १ बढाउने
                 const referrerRef = ref(db, 'users/' + referrerUID);
                 await runTransaction(referrerRef, (userData) => {
                     if (userData) {
@@ -167,13 +166,15 @@
                     return userData;
                 });
 
-                toast("दर्ता सफल! रू ५ प्राप्त भयो।", "success");
+                toast("दर्ता सफल! रू ५ बोनस प्राप्त भयो।", "success");
                 setTimeout(() => window.location.replace("dashboard.html"), 1500);
 
             } catch (error) {
+                console.error(error);
                 let errorMsg = "दर्ता विफल भयो।";
                 if(error.code === 'auth/email-already-in-use') errorMsg = "यो इमेल पहिल्यै प्रयोगमा छ।";
-                console.error(error);
+                if(error.code === 'auth/weak-password') errorMsg = "पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ।";
+                
                 toast(errorMsg, "error");
                 btn.disabled = false; btn.innerText = "REGISTER";
             }
