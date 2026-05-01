@@ -68,7 +68,6 @@
         .status-approved, .status-success { color: #27ae60; font-weight: bold; }
         .status-rejected { color: #e74c3c; font-weight: bold; }
 
-        /* --- Updated Bottom Nav (Dashboard Style) --- */
         .bottom-nav { 
             position: fixed; bottom: 15px; left: 15px; right: 15px; 
             background: rgba(30, 41, 59, 0.95); display: flex; 
@@ -108,7 +107,7 @@
     <div class="stats-grid">
         <div class="stat-card">
             <i class="fas fa-users"></i>
-            <span class="stat-val" id="referCount">0</span>
+            <span class="stat-val" id="referCountDisplay">0</span>
             <small>Referrals</small>
         </div>
         <div class="stat-card">
@@ -200,17 +199,22 @@
                 const userRef = ref(db, 'users/' + user.uid);
                 let userReferCode = "";
 
+                // Real-time listener for user profile data
                 onValue(userRef, (snap) => {
                     const data = snap.val();
                     if (data) {
                         userReferCode = data.numericID || "-----";
                         document.getElementById('displayName').innerText = data.name || "Gamer";
-                        document.getElementById('referCount').innerText = data.referralCount || 0;
+                        
+                        // यहाँ referralCount लाई अपडेट गर्ने (यदि डेटाबेसमा referralCount छैन भने 0 देखाउँछ)
+                        document.getElementById('referCountDisplay').innerText = data.referralCount || 0;
+                        
                         document.getElementById('referBalance').innerText = "रू " + (data.balance || 0).toFixed(2);
                         document.getElementById('displayID').innerText = userReferCode;
                     }
                 });
 
+                // History Functionality
                 document.getElementById('historyBtn').onclick = async () => {
                     openModal('historyModal');
                     const historyList = document.getElementById('historyList');
@@ -243,35 +247,58 @@
                     } catch (err) { historyList.innerHTML = '<p style="text-align:center; color:red;">लोडिङ एरर!</p>'; }
                 };
 
+                // Share Functionality
                 document.getElementById('shareBtn').onclick = () => {
                     const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode} प्रयोग गर्नुहोस् र बोनस पाउनुहोस्।\nलिंक: https://mero-ludo.web.app`;
                     if (navigator.share) { navigator.share({ title: 'Mero Ludo', text: msg, url: 'https://mero-ludo.web.app' }); }
                     else { navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!")); }
                 };
 
+                // Withdraw Request Logic
                 document.getElementById('submitWitBtn').onclick = async () => {
                     const amt = parseFloat(document.getElementById('witAmount').value);
                     const walletId = document.getElementById('witID').value.trim();
                     if (!amt || amt < 100 || !walletId) return showToast("विवरण मिलेन (Min 100)");
                     try {
-                        const res = await runTransaction(userRef, (u) => { if (u && (u.balance || 0) >= amt) { u.balance -= amt; return u; } });
+                        const res = await runTransaction(userRef, (u) => { 
+                            if (u && (u.balance || 0) >= amt) { 
+                                u.balance -= amt; 
+                                return u; 
+                            } 
+                        });
                         if (!res.committed) throw new Error("ब्यालेन्स पुगेन!");
-                        await push(ref(db, 'admin/withdraws'), { uid: user.uid, amount: amt, method: document.getElementById('witMethod').value, wallet: walletId, status: 'pending', time: Date.now() });
-                        showToast("अनुरोध सफल भयो!"); closeModal('withdrawModal');
+                        await push(ref(db, 'admin/withdraws'), { 
+                            uid: user.uid, 
+                            amount: amt, 
+                            method: document.getElementById('witMethod').value, 
+                            wallet: walletId, 
+                            status: 'pending', 
+                            time: Date.now() 
+                        });
+                        showToast("अनुरोध सफल भयो!"); 
+                        closeModal('withdrawModal');
                     } catch(e) { showToast(e.message); }
                 };
 
+                // Profile Update & Logout
                 document.getElementById('logoutBtn').onclick = () => signOut(auth);
                 document.getElementById('saveProfileBtn').onclick = () => {
                     const name = document.getElementById('newName').value.trim();
-                    if(name) update(userRef, { name: name }).then(() => { showToast("नाम अपडेट भयो!"); closeModal('editModal'); });
+                    if(name) update(userRef, { name: name }).then(() => { 
+                        showToast("नाम अपडेट भयो!"); 
+                        closeModal('editModal'); 
+                    });
                 };
-            } else { window.location.href = "index.html"; }
+            } else { 
+                window.location.href = "index.html"; 
+            }
         });
 
         window.copyUID = () => {
             const id = document.getElementById('displayID').innerText;
-            if(id !== "-----") { navigator.clipboard.writeText(id).then(() => showToast("Refer Code Copied!")); }
+            if(id !== "-----") { 
+                navigator.clipboard.writeText(id).then(() => showToast("Refer Code Copied!")); 
+            }
         };
     </script>
 </body>
