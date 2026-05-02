@@ -56,7 +56,7 @@
             <div class="input-group"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="पूरा नाम"></div>
             <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="इमेल"></div>
             <div class="input-group"><i class="fas fa-key"></i><input type="password" id="regPass" placeholder="पासवर्ड"></div>
-            <div class="input-group"><i class="fas fa-user-friends"></i><input type="text" id="regRefer" placeholder="रेफरल कोड (अनिवार्य)"></div>
+            <div class="input-group"><i class="fas fa-user-friends"></i><input type="text" id="regRefer" placeholder="रेफरल कोड (उदा: admin123)"></div>
             <button class="btn-auth" id="regBtn">REGISTER</button>
             <p class="switch-text">खाता छ? <b onclick="toggleForm('login')">Login गर्नुहोस्</b></p>
         </div>
@@ -76,9 +76,11 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, set, get, runTransaction, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // सुधारिएको Config
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
+            databaseURL: "https://mero-ludo-default-rtdb.firebaseio.com",
             projectId: "mero-ludo",
             storageBucket: "mero-ludo.firebasestorage.app",
             messagingSenderId: "1094014617347",
@@ -109,91 +111,80 @@
             Swal.fire({ text: msg, icon: icon, confirmButtonColor: '#f1c40f', background: '#1a252f', color: '#fff', timer: 2500 });
         };
 
-        // --- Registration Logic ---
         document.getElementById('regBtn').onclick = async () => {
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const pass = document.getElementById('regPass').value;
             const referCodeInput = document.getElementById('regRefer').value.trim();
 
-            if(!name || !email || !pass || !referCodeInput) return toast("सबै विवरण र रेफरल कोड भर्नुहोस्!", "warning");
+            if(!name || !email || !pass) return toast("नाम, इमेल र पासवर्ड भर्नुहोस्!", "warning");
             
             const btn = document.getElementById('regBtn');
             btn.disabled = true; btn.innerText = "जाँच गर्दै...";
 
             try {
-                // १. रेफरल कोड भएको मान्छे डाटाबेसमा खोज्ने
-                const usersRef = ref(db, 'users');
-                const userQuery = query(usersRef, orderByChild('numericID'), equalTo(referCodeInput));
-                const snapshot = await get(userQuery);
+                let referrerUID = null;
                 
-                if (!snapshot.exists()) {
-                    btn.disabled = false; btn.innerText = "REGISTER";
-                    return toast("गलत रेफरल कोड! कृपया सही कोड माग्नुहोस्।", "error");
+                // पहिलो युजरको लागि 'admin123' कोड राख्न सकिने सुविधा
+                if (referCodeInput && referCodeInput !== "admin123") {
+                    const usersRef = ref(db, 'users');
+                    const userQuery = query(usersRef, orderByChild('numericID'), equalTo(referCodeInput));
+                    const snapshot = await get(userQuery);
+                    
+                    if (!snapshot.exists()) {
+                        btn.disabled = false; btn.innerText = "REGISTER";
+                        return toast("गलत रेफरल कोड!", "error");
+                    }
+                    referrerUID = Object.keys(snapshot.val())[0];
                 }
 
-                const referrerData = snapshot.val();
-                const referrerUID = Object.keys(referrerData)[0];
-
                 btn.innerText = "खाता बनाउँदै...";
-                
-                // २. Firebase Auth मा नयाँ प्रयोगकर्ता बनाउने
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
-                
-                // ३. नयाँ युजरको लागि आफ्नै ६ अंकको Numeric ID
                 const myNumericID = Math.floor(100000 + Math.random() * 900000).toString();
 
-                // ४. नयाँ प्रयोगकर्ताको प्रोफाइल सेभ गर्ने (रू ५ बोनस सहित)
                 await set(ref(db, 'users/' + user.uid), {
                     name: name,
                     email: email,
                     balance: 5, 
                     numericID: myNumericID,
-                    referredBy: referCodeInput,
+                    referredBy: referCodeInput || "None",
                     uid: user.uid,
                     referralCount: 0,
                     joinedAt: Date.now()
                 });
 
-                // ५. रेफर गर्ने साथीलाई रू ५ दिने र काउन्ट १ बढाउने
-                const referrerRef = ref(db, 'users/' + referrerUID);
-                await runTransaction(referrerRef, (userData) => {
-                    if (userData) {
-                        userData.balance = (userData.balance || 0) + 5;
-                        userData.referralCount = (userData.referralCount || 0) + 1;
-                    }
-                    return userData;
-                });
+                if (referrerUID) {
+                    const referrerRef = ref(db, 'users/' + referrerUID);
+                    await runTransaction(referrerRef, (userData) => {
+                        if (userData) {
+                            userData.balance = (userData.balance || 0) + 5;
+                            userData.referralCount = (userData.referralCount || 0) + 1;
+                        }
+                        return userData;
+                    });
+                }
 
                 toast("दर्ता सफल! रू ५ बोनस प्राप्त भयो।", "success");
                 setTimeout(() => window.location.replace("dashboard.html"), 1500);
 
             } catch (error) {
                 console.error(error);
-                let errorMsg = "दर्ता विफल भयो।";
-                if(error.code === 'auth/email-already-in-use') errorMsg = "यो इमेल पहिल्यै प्रयोगमा छ।";
-                if(error.code === 'auth/weak-password') errorMsg = "पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ।";
-                
-                toast(errorMsg, "error");
+                toast("दर्ता विफल: " + error.message, "error");
                 btn.disabled = false; btn.innerText = "REGISTER";
             }
         };
 
-        // --- Login Logic ---
         document.getElementById('loginBtn').onclick = async () => {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
-            
             if(!email || !pass) return toast("विवरण भर्नुहोस्!", "warning");
-            
             const btn = document.getElementById('loginBtn');
             btn.disabled = true; btn.innerText = "लगइन हुँदैछ...";
-
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (error) {
-                toast("लगइन मिलेन! विवरण चेक गर्नुहोस्।", "error");
+                toast("लगइन विफल: " + error.message, "error");
                 btn.disabled = false; btn.innerText = "LOGIN";
             }
         };
