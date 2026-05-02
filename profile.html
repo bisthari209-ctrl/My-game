@@ -15,31 +15,48 @@
         .user-img-container { position: relative; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
         .user-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #fff; }
         .user-name { font-size: 1.4rem; font-weight: bold; margin: 5px 0; }
+        
+        /* Refer Code Container Styling */
+        .uid-container { 
+            font-size: 0.9rem; 
+            background: rgba(255,255,255,0.15); 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: 0.3s;
+        }
+        .uid-container:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
+        .uid-container b { color: var(--gold); letter-spacing: 1px; }
+
         .lucky-draw-btn { background: linear-gradient(135deg, #ff0055, #ffcc00); color: white; padding: 8px 12px; border-radius: 12px; font-size: 0.65rem; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; border: 2px solid white; animation: pulse 1.5s infinite; text-decoration: none; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .uid-container { font-size: 0.85rem; background: rgba(255,255,255,0.15); display: inline-flex; align-items: center; gap: 8px; padding: 7px 18px; border-radius: 30px; cursor: pointer; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
+        
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-top: -30px; }
         .stat-card { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
         .stat-card i { color: var(--gold); font-size: 1.4rem; margin-bottom: 8px; }
         .stat-val { display: block; font-weight: 800; font-size: 1.2rem; color: #1a252f; }
+        
         .action-container { display: flex; justify-content: space-between; padding: 25px 20px; gap: 12px; }
         .btn-main { flex: 1; height: 50px; border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .btn-deposit { background: linear-gradient(135deg, #27ae60, #2ecc71); }
         .btn-withdraw { background: linear-gradient(135deg, #2980b9, #3498db); }
+
         .menu-list { background: white; margin: 0 20px 20px 20px; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .menu-item { padding: 18px; border-bottom: 1px solid #f8f9fa; display: flex; justify-content: space-between; align-items: center; color: #2c3e50; text-decoration: none; cursor: pointer; }
+        
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 85%; padding: 25px; border-radius: 25px; text-align: center; max-height: 80vh; overflow-y: auto; }
-        .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .hist-type { font-weight: bold; font-size: 0.95rem; display: block; text-align: left; }
-        .hist-date { font-size: 0.75rem; color: #888; }
-        .status-pending { color: #f39c12; font-weight: bold; }
-        .status-approved, .status-success { color: #27ae60; font-weight: bold; }
-        .status-rejected { color: #e74c3c; font-weight: bold; }
+        
         .bottom-nav { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(30, 41, 59, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 2000; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
         .nav-item { text-align: center; color: #94a3b8; font-size: 0.7rem; text-decoration: none; font-weight: 600; flex: 1; }
         .nav-item i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
         .nav-item.active { color: var(--gold); }
+        
         #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 4000; left: 50%; bottom: 110px; transform: translateX(-50%); }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -56,9 +73,10 @@
             <div style="min-width: 60px;"></div> 
         </div>
         <div class="user-name" id="displayName">लोडिङ...</div>
-        <div class="uid-container" onclick="copyUID()">
-            <span>Refer Code: <span id="displayID">-----</span></span>
-            <i class="far fa-copy"></i>
+        
+        <div class="uid-container" onclick="copyReferCode()">
+            <span>Refer Code: <b id="displayReferCode">------</b></span>
+            <i class="far fa-copy" style="color: var(--gold);"></i>
         </div>
     </div>
 
@@ -93,9 +111,9 @@
 
     <div id="editModal" class="modal"><div class="modal-content">
         <h3>Edit Profile Name</h3>
-        <input type="text" id="newName" placeholder="New Name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:15px; box-sizing: border-box;">
-        <button class="btn-main btn-deposit" style="width:100%;" id="saveProfileBtn">SAVE</button>
-        <button onclick="closeModal('editModal')" style="margin-top:10px; background:none; border:none; color:gray;">Cancel</button>
+        <input type="text" id="newName" placeholder="New Name">
+        <button class="btn-main btn-deposit" style="width:100%; margin-top:15px;" id="saveProfileBtn">SAVE</button>
+        <button onclick="closeModal('editModal')" style="margin-top:15px; background:none; border:none; color:gray;">Cancel</button>
     </div></div>
 
     <div id="withdrawModal" class="modal"><div class="modal-content">
@@ -110,14 +128,6 @@
         <button onclick="closeModal('withdrawModal')" style="margin-top:10px; background:none; border:none; color:gray;">Cancel</button>
     </div></div>
 
-    <div id="historyModal" class="modal"><div class="modal-content">
-        <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">History</h3>
-        <div id="historyList" style="text-align:left;">
-            <p style="text-align:center;">लोडिङ हुँदैछ...</p>
-        </div>
-        <button onclick="closeModal('historyModal')" style="margin-top:20px; width:100%; padding:12px; background:#f0f2f5; border:none; border-radius:10px; font-weight:bold;">CLOSE</button>
-    </div></div>
-
     <nav class="bottom-nav">
         <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>Home</a>
         <a href="matches.html" class="nav-item"><i class="fas fa-gamepad"></i>Matches</a>
@@ -128,11 +138,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, update, push, runTransaction, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, push, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
             authDomain: "mero-ludo.firebaseapp.com",
+            databaseURL: "https://mero-ludo-default-rtdb.firebaseio.com",
             projectId: "mero-ludo",
             storageBucket: "mero-ludo.firebasestorage.app",
             messagingSenderId: "1094014617347",
@@ -152,70 +163,57 @@
         window.openModal = (id) => document.getElementById(id).style.display = 'flex';
         window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 
+        // रेफरल कोड कपी गर्ने फङ्सन
+        window.copyReferCode = () => {
+            const code = document.getElementById('displayReferCode').innerText;
+            if(code !== "------") {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast("Refer Code: " + code + " Copied!");
+                });
+            }
+        };
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const userRef = ref(db, 'users/' + user.uid);
-                let userReferCode = "";
+                let currentReferCode = "";
 
                 onValue(userRef, (snap) => {
                     const data = snap.val();
                     if (data) {
-                        userReferCode = data.numericID || "-----";
+                        currentReferCode = data.numericID || "------";
                         document.getElementById('displayName').innerText = data.name || "Gamer";
+                        document.getElementById('displayReferCode').innerText = currentReferCode;
                         document.getElementById('referCountDisplay').innerText = data.referralCount || 0;
                         document.getElementById('referBalance').innerText = "रू " + (data.balance || 0).toFixed(2);
-                        document.getElementById('displayID').innerText = userReferCode;
                     }
                 });
 
-                // सुधारिएको History Logic: यसले Admin Request बाट पनि डेटा चेक गर्छ
-                document.getElementById('historyBtn').onclick = () => {
-                    openModal('historyModal');
-                    const historyList = document.getElementById('historyList');
-                    historyList.innerHTML = '<p style="text-align:center;">लोडिङ हुँदैछ...</p>';
-                    
-                    // रियल-टाइम डेटा अपडेटको लागि onValue प्रयोग गरिएको छ
-                    onValue(ref(db, `users/${user.uid}/history`), (historySnap) => {
-                        if (historySnap.exists()) {
-                            let allHistory = [];
-                            historySnap.forEach(child => {
-                                allHistory.push(child.val());
-                            });
-                            
-                            allHistory.sort((a, b) => (b.time || 0) - (a.time || 0));
+                // सेयर गर्ने फङ्सन
+                document.getElementById('shareBtn').onclick = () => {
+                    const shareMsg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${currentReferCode} प्रयोग गर्नुहोस र बोनस पाउनुहोस!\nएप लिंक: https://mero-ludo.web.app`;
+                    if (navigator.share) {
+                        navigator.share({ title: 'Mero Ludo', text: shareMsg });
+                    } else {
+                        navigator.clipboard.writeText(shareMsg).then(() => showToast("Share message copied!"));
+                    }
+                };
 
-                            let html = "";
-                            allHistory.forEach(h => {
-                                const date = h.time ? new Date(h.time).toLocaleDateString() : "N/A";
-                                // एडमिनले एप्रुभ गरेपछि यहाँ 'approved' देखाउँछ
-                                const status = (h.status || 'pending').toLowerCase();
-                                const type = h.type || 'Transaction';
-                                const color = type === 'Deposit' ? 'var(--success)' : 'var(--blue)';
-
-                                html += `<div class="hist-item">
-                                    <div>
-                                        <span class="hist-type" style="color:${color}">${type}</span>
-                                        <span class="hist-date">${date}</span>
-                                    </div>
-                                    <div style="text-align:right;">
-                                        <div style="font-weight:bold;">रू ${h.amount || 0}</div>
-                                        <div class="status-${status}">${status.toUpperCase()}</div>
-                                    </div>
-                                </div>`;
-                            });
-                            historyList.innerHTML = html;
-                        } else {
-                            historyList.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">कुनै हिस्ट्री भेटिएन।</p>';
-                        }
-                    }, (err) => {
-                        historyList.innerHTML = '<p style="text-align:center; color:red;">लोडिङ एरर!</p>';
+                document.getElementById('logoutBtn').onclick = () => signOut(auth);
+                
+                document.getElementById('saveProfileBtn').onclick = () => {
+                    const name = document.getElementById('newName').value.trim();
+                    if(name) update(userRef, { name: name }).then(() => { 
+                        showToast("नाम अपडेट भयो!"); 
+                        closeModal('editModal'); 
                     });
                 };
 
+                // Withdraw Logic
                 document.getElementById('submitWitBtn').onclick = async () => {
                     const amt = parseFloat(document.getElementById('witAmount').value);
                     const walletId = document.getElementById('witID').value.trim();
-                    if (!amt || amt < 100 || !walletId) return showToast("विवरण मिलेन (Min 100)");
+                    if (!amt || amt < 100 || !walletId) return showToast("Min Withdraw रू १०० हो!");
 
                     try {
                         const res = await runTransaction(userRef, (u) => { 
@@ -227,52 +225,26 @@
                         
                         if (!res.committed) throw new Error("ब्यालेन्स पुगेन!");
 
-                        const requestKey = push(ref(db, `users/${user.uid}/history`)).key;
-                        const withdrawLog = { 
-                            id: requestKey,
-                            amount: amt, 
-                            type: 'Withdraw', 
-                            status: 'pending', 
-                            time: Date.now(),
+                        const requestKey = push(ref(db, `withdraws`)).key;
+                        const withdrawData = {
+                            uid: user.uid,
+                            amount: amt,
                             method: document.getElementById('witMethod').value,
                             wallet: walletId,
-                            uid: user.uid
+                            status: 'pending',
+                            time: Date.now()
                         };
 
-                        const updates = {};
-                        updates[`users/${user.uid}/history/${requestKey}`] = withdrawLog;
-                        updates[`admin_requests/withdraws/${requestKey}`] = withdrawLog;
-                        
-                        await update(ref(db), updates);
-                        
-                        showToast("अनुरोध सफल भयो!"); 
+                        await update(ref(db, `withdraws/${requestKey}`), withdrawData);
+                        showToast("विथड्र अनुरोध पठाइयो!"); 
                         closeModal('withdrawModal');
                     } catch(e) { showToast(e.message); }
                 };
 
-                document.getElementById('shareBtn').onclick = () => {
-                    const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode}\nलिंक: https://mero-ludo.web.app`;
-                    if (navigator.share) { navigator.share({ title: 'Mero Ludo', text: msg }); }
-                    else { navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!")); }
-                };
-
-                document.getElementById('logoutBtn').onclick = () => signOut(auth);
-                document.getElementById('saveProfileBtn').onclick = () => {
-                    const name = document.getElementById('newName').value.trim();
-                    if(name) update(userRef, { name: name }).then(() => { 
-                        showToast("नाम अपडेट भयो!"); 
-                        closeModal('editModal'); 
-                    });
-                };
-            } else { window.location.href = "index.html"; }
-        });
-
-        window.copyUID = () => {
-            const id = document.getElementById('displayID').innerText;
-            if(id !== "-----") { 
-                navigator.clipboard.writeText(id).then(() => showToast("Refer Code Copied!")); 
+            } else { 
+                window.location.href = "index.html"; 
             }
-        };
+        });
     </script>
 </body>
 </html>
