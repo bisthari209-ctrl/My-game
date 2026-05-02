@@ -128,7 +128,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, update, push, runTransaction, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, push, runTransaction, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
@@ -157,7 +157,6 @@
                 const userRef = ref(db, 'users/' + user.uid);
                 let userReferCode = "";
 
-                // १. युजर डेटा तान्ने
                 onValue(userRef, (snap) => {
                     const data = snap.val();
                     if (data) {
@@ -169,27 +168,26 @@
                     }
                 });
 
-                // २. History Logic (सिधै युजरको आफ्नो 'history' फोल्डरबाट)
-                document.getElementById('historyBtn').onclick = async () => {
+                // सुधारिएको History Logic: यसले Admin Request बाट पनि डेटा चेक गर्छ
+                document.getElementById('historyBtn').onclick = () => {
                     openModal('historyModal');
                     const historyList = document.getElementById('historyList');
                     historyList.innerHTML = '<p style="text-align:center;">लोडिङ हुँदैछ...</p>';
                     
-                    try {
-                        const historySnap = await get(ref(db, `users/${user.uid}/history`));
-                        
+                    // रियल-टाइम डेटा अपडेटको लागि onValue प्रयोग गरिएको छ
+                    onValue(ref(db, `users/${user.uid}/history`), (historySnap) => {
                         if (historySnap.exists()) {
                             let allHistory = [];
                             historySnap.forEach(child => {
                                 allHistory.push(child.val());
                             });
                             
-                            // समय अनुसार क्रमबद्ध गर्ने (नयाँ माथि)
                             allHistory.sort((a, b) => (b.time || 0) - (a.time || 0));
 
                             let html = "";
                             allHistory.forEach(h => {
                                 const date = h.time ? new Date(h.time).toLocaleDateString() : "N/A";
+                                // एडमिनले एप्रुभ गरेपछि यहाँ 'approved' देखाउँछ
                                 const status = (h.status || 'pending').toLowerCase();
                                 const type = h.type || 'Transaction';
                                 const color = type === 'Deposit' ? 'var(--success)' : 'var(--blue)';
@@ -209,12 +207,11 @@
                         } else {
                             historyList.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">कुनै हिस्ट्री भेटिएन।</p>';
                         }
-                    } catch (err) {
-                        historyList.innerHTML = '<p style="text-align:center; color:red;">डेटा तान्न सकिएन!</p>';
-                    }
+                    }, (err) => {
+                        historyList.innerHTML = '<p style="text-align:center; color:red;">लोडिङ एरर!</p>';
+                    });
                 };
 
-                // ३. Withdraw Request
                 document.getElementById('submitWitBtn').onclick = async () => {
                     const amt = parseFloat(document.getElementById('witAmount').value);
                     const walletId = document.getElementById('witID').value.trim();
@@ -230,28 +227,31 @@
                         
                         if (!res.committed) throw new Error("ब्यालेन्स पुगेन!");
 
+                        const requestKey = push(ref(db, `users/${user.uid}/history`)).key;
                         const withdrawLog = { 
+                            id: requestKey,
                             amount: amt, 
                             type: 'Withdraw', 
                             status: 'pending', 
                             time: Date.now(),
                             method: document.getElementById('witMethod').value,
-                            wallet: walletId
+                            wallet: walletId,
+                            uid: user.uid
                         };
 
-                        // १. युजरको आफ्नो हिस्ट्रीमा हाल्ने
-                        await push(ref(db, `users/${user.uid}/history`), withdrawLog);
-                        // २. एडमिनले हेर्नको लागि छुट्टै फोल्डरमा हाल्ने (uid सहित)
-                        await push(ref(db, 'admin_requests/withdraws'), { ...withdrawLog, uid: user.uid });
+                        const updates = {};
+                        updates[`users/${user.uid}/history/${requestKey}`] = withdrawLog;
+                        updates[`admin_requests/withdraws/${requestKey}`] = withdrawLog;
+                        
+                        await update(ref(db), updates);
                         
                         showToast("अनुरोध सफल भयो!"); 
                         closeModal('withdrawModal');
                     } catch(e) { showToast(e.message); }
                 };
 
-                // ४. अन्य बटनहरू
                 document.getElementById('shareBtn').onclick = () => {
-                    const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode} प्रयोग गर्नुहोस्।\nलिंक: https://mero-ludo.web.app`;
+                    const msg = `नमस्ते! म "Mero Ludo" मा गेम खेलेर पैसा कमाउँदैछु। मेरो Refer Code: ${userReferCode}\nलिंक: https://mero-ludo.web.app`;
                     if (navigator.share) { navigator.share({ title: 'Mero Ludo', text: msg }); }
                     else { navigator.clipboard.writeText(msg).then(() => showToast("सेयर मेसेज कपी भयो!")); }
                 };
