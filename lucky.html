@@ -33,7 +33,6 @@
             cursor: pointer; width: 100%; margin-top: 5px;
         }
 
-        /* History Table */
         .history-card { background: white; margin: 15px; border-radius: 15px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .history-card h3 { margin-top: 0; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
@@ -52,11 +51,11 @@
 <body>
 
     <div class="header">
-        <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <a href="dashboard.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0;">Lucky Box Draw</h2>
         <div class="balance-chip">
             <i class="fas fa-wallet" style="color:var(--gold);"></i>
-            <span id="userBalance">रू 0.00</span>
+            <span id="userBalanceDisplay">रू 0.00</span>
         </div>
     </div>
 
@@ -66,7 +65,7 @@
             <div class="box-title">Bronze Box</div>
             <div class="box-price">Entry: रू 5</div>
             <span class="box-prize">Win: रू 50</span>
-            <button class="btn-join" onclick="joinLuckyDraw(5, 50, 'Bronze')">JOIN NOW</button>
+            <button class="btn-join" onclick="handleJoinRequest(5, 50, 'Bronze')">JOIN NOW</button>
         </div>
 
         <div class="lucky-box box-20">
@@ -74,7 +73,7 @@
             <div class="box-title">Silver Box</div>
             <div class="box-price">Entry: रू 20</div>
             <span class="box-prize">Win: रू 80</span>
-            <button class="btn-join" onclick="joinLuckyDraw(20, 80, 'Silver')">JOIN NOW</button>
+            <button class="btn-join" onclick="handleJoinRequest(20, 80, 'Silver')">JOIN NOW</button>
         </div>
 
         <div class="lucky-box box-50">
@@ -82,7 +81,7 @@
             <div class="box-title">Gold Box</div>
             <div class="box-price">Entry: रू 50</div>
             <span class="box-prize">Win: रू 130</span>
-            <button class="btn-join" onclick="joinLuckyDraw(50, 130, 'Gold')">JOIN NOW</button>
+            <button class="btn-join" onclick="handleJoinRequest(50, 130, 'Gold')">JOIN NOW</button>
         </div>
 
         <div class="lucky-box box-100">
@@ -90,7 +89,7 @@
             <div class="box-title">Diamond Box</div>
             <div class="box-price">Entry: रू 100</div>
             <span class="box-prize">Win: रू 200</span>
-            <button class="btn-join" onclick="joinLuckyDraw(100, 200, 'Diamond')">JOIN NOW</button>
+            <button class="btn-join" onclick="handleJoinRequest(100, 200, 'Diamond')">JOIN NOW</button>
         </div>
     </div>
 
@@ -113,141 +112,110 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, push, update, runTransaction, get, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, collection, addDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAGjZQaWHGJ2EFDIyIKdVKErk_UjnsxiZ8",
-            authDomain: "mero-ludo.firebaseapp.com",
-            projectId: "mero-ludo",
-            storageBucket: "mero-ludo.firebasestorage.app",
-            messagingSenderId: "1094014617347",
-            appId: "1:1094014617347:web:348cec65cea83c5a8fcb36"
+            apiKey: "AIzaSyALYYgyAZ_mLWeXHvYvL9LXsDaTHCbDK_g",
+            authDomain: "harishbist-3a263.firebaseapp.com",
+            projectId: "harishbist-3a263",
+            storageBucket: "harishbist-3a263.firebasestorage.app",
+            messagingSenderId: "816353842957",
+            appId: "1:816353842957:web:5b853c5bed6450fc544244"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getDatabase(app);
+        const db = getFirestore(app);
 
-        let currentBalance = 0;
-        let userUID = "";
-        let userName = "";
+        let currentUser = null;
+        let userBalance = 0;
 
+        // १. अथेन्टिकेसन र ब्यालेन्स लोडिङ
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                userUID = user.uid;
-                // Fetch User Data
-                onValue(ref(db, 'users/' + user.uid), (snap) => {
-                    if (snap.exists()) {
-                        userName = snap.val().name || "User";
-                        currentBalance = snap.val().balance || 0;
-                        document.getElementById('userBalance').innerText = "रू " + currentBalance.toFixed(2);
+                currentUser = user;
+                onSnapshot(doc(db, "users", user.uid), (snap) => {
+                    if(snap.exists()) {
+                        userBalance = snap.data().balance || 0;
+                        document.getElementById('userBalanceDisplay').innerText = "रू " + userBalance.toFixed(2);
                     }
                 });
-                // Fetch History
                 loadHistory();
-            } else { window.location.href = "index.html"; }
+            } else {
+                window.location.href = "login.html";
+            }
         });
 
-        async function loadHistory() {
-            const historyRef = ref(db, 'luckyDrawHistory');
-            onValue(historyRef, (snap) => {
+        // २. ड्र हिस्ट्री लोड गर्ने
+        function loadHistory() {
+            const q = query(
+                collection(db, "lucky_draws"), 
+                where("uid", "==", currentUser.uid),
+                orderBy("timestamp", "desc"),
+                limit(10)
+            );
+
+            onSnapshot(q, (snapshot) => {
                 const tbody = document.getElementById('historyBody');
                 tbody.innerHTML = "";
-                let rows = [];
-                snap.forEach(child => {
-                    const d = child.val();
-                    if (d.uid === userUID) {
-                        rows.push(`<tr>
-                            <td>${d.box}</td>
-                            <td>${d.userNumber}</td>
-                            <td class="${d.result === 'WIN' ? 'win-text' : 'loss-text'}">${d.result}</td>
-                        </tr>`);
-                    }
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">विवरण खाली छ</td></tr>';
+                    return;
+                }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    tbody.innerHTML += `<tr>
+                        <td>${data.boxName}</td>
+                        <td>${data.selectedNumber}</td>
+                        <td class="${data.result === 'WIN' ? 'win-text' : 'loss-text'}">${data.result}</td>
+                    </tr>`;
                 });
-                tbody.innerHTML = rows.reverse().slice(0, 10).join(''); // Only show last 10
-                if (rows.length === 0) tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No history found</td></tr>";
             });
         }
 
-        window.joinLuckyDraw = async (fee, winPrize, boxName) => {
-            if (currentBalance < fee) {
-                return Swal.fire({ icon: 'error', title: 'ब्यालेन्स पुगेन!', text: 'कृपया पहिले डिपोजिट गर्नुहोस्।' });
+        // ३. ड्र जोइन गर्ने लोजिक
+        window.handleJoinRequest = async (fee, winPrize, boxName) => {
+            if (userBalance < fee) {
+                return Swal.fire('Error', 'तपाईँको ब्यालेन्स पुगेन!', 'error');
             }
 
             const { value: userNumber } = await Swal.fire({
                 title: boxName + ' Box Entry',
                 input: 'number',
-                inputLabel: 'कुनै ५ अंकको नम्बर हाल्नुहोस्',
+                inputLabel: 'कुनै ५ अंकको नम्बर हाल्नुहोस् (०-९९९९९)',
                 inputPlaceholder: '12345',
                 showCancelButton: true,
                 confirmButtonText: 'Submit & Pay',
                 confirmButtonColor: '#e67e22',
-                inputValidator: (value) => {
-                    if (!value) return 'नम्बर हाल्न अनिवार्य छ!';
-                }
             });
 
             if (userNumber) {
                 Swal.fire({ title: 'जाँच गर्दै...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                try {
-                    // १. एडमिनको गोप्य नम्बर तान्ने
-                    const systemCodeSnap = await get(ref(db, 'settings/luckySystemCode'));
-                    const systemNumber = String(systemCodeSnap.val() || "00000").trim();
+                // १/१० सम्भावना (Win Probability)
+                const isWin = Math.random() > 0.9;
+                const result = isWin ? "WIN" : "LOSS";
+                const newBalance = isWin ? (userBalance - fee + winPrize) : (userBalance - fee);
 
-                    const userRef = ref(db, 'users/' + userUID);
-                    
-                    // २. पैसा काट्ने
-                    const payResult = await runTransaction(userRef, (userData) => {
-                        if (userData && (userData.balance || 0) >= fee) {
-                            userData.balance -= fee;
-                            return userData;
-                        }
+                try {
+                    // Firestore मा डाटा अपडेट गर्ने
+                    await updateDoc(doc(db, "users", currentUser.uid), { balance: newBalance });
+                    await addDoc(collection(db, "lucky_draws"), {
+                        uid: currentUser.uid,
+                        boxName: boxName,
+                        selectedNumber: userNumber,
+                        result: result,
+                        timestamp: serverTimestamp()
                     });
 
-                    if (payResult.committed) {
-                        const isWin = (String(userNumber).trim() === systemNumber);
-
-                        if (isWin) {
-                            // Winner logic
-                            await runTransaction(userRef, (userData) => {
-                                if (userData) { userData.balance = (userData.balance || 0) + winPrize; }
-                                return userData;
-                            });
-                        }
-
-                        // ३. हिस्ट्री सेभ गर्ने
-                        const historyKey = push(ref(db, 'luckyDrawHistory')).key;
-                        await update(ref(db, `luckyDrawHistory/${historyKey}`), {
-                            uid: userUID,
-                            name: userName,
-                            box: boxName,
-                            userNumber: userNumber,
-                            systemNumber: systemNumber, // Admin history को लागि डेटाबेस मा रहन्छ
-                            result: isWin ? "WIN" : "LOSS",
-                            prize: isWin ? winPrize : 0,
-                            time: Date.now()
-                        });
-
-                        // ४. फाइनल रिजल्ट (गोप्य नम्बर नदेखाई)
-                        if (isWin) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'बधाई छ!',
-                                text: `तपाईँको नम्बर मिल्यो! रू ${winPrize} प्राप्त गर्नुभयो।`,
-                                confirmButtonColor: '#27ae60'
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'अहँ मिलेन!',
-                                text: `तपाईँले छान्नुभएको नम्बर (${userNumber}) र लक्की नम्बर मिलेन।`,
-                                footer: 'अर्को पटक फेरि प्रयास गर्नुहोस्!'
-                            });
-                        }
+                    Swal.close();
+                    if (isWin) {
+                        Swal.fire('बधाई छ!', `तपाईँले रू ${winPrize} जित्नुभयो!`, 'success');
+                    } else {
+                        Swal.fire('मिलेन!', `यो पटक हारियो, अर्को पटक प्रयास गर्नुहोला।`, 'error');
                     }
-                } catch (error) {
-                    Swal.fire('Error', 'प्राविधिक समस्या आयो!', 'error');
+                } catch (e) {
+                    Swal.fire('Error', 'सिस्टममा केही समस्या आयो!', 'error');
                 }
             }
         };
